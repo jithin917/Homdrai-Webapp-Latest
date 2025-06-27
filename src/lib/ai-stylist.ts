@@ -22,7 +22,7 @@ export interface DesignPreference {
   style?: string;
 }
 
-export interface UserProfile {
+interface UserProfile {
   id: string;
   fullName?: string;
   preferences?: {
@@ -322,7 +322,7 @@ export const getUserSavedDesigns = async (userId: string) => {
 };
 
 // Function to create an order from a saved design
-export const createOrderFromDesign = async (
+const createOrderFromDesign = async (
   designId: string,
   userId: string,
   shippingDetails: any,
