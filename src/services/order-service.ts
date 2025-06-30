@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { Order, OrderStatus, OrderType, PriorityLevel } from '../types/oms';
+import type { Order } from '../types/oms';
 
 export const orderService = {
   async getAll(): Promise<Order[]> {
@@ -8,16 +8,17 @@ export const orderService = {
         .from('oms_orders')
         .select(`
           *,
-          customer:oms_customers(id, name, phone, email),
-          store:oms_stores(id, name, code),
-          assigned_user:oms_users(id, username, email),
+          customer:oms_customers(id,name,phone,email),
+          store:oms_stores(id,name,code),
+          assigned_to:oms_users!oms_orders_assigned_to_fkey(id,username,email),
+          created_by_staff:oms_users!oms_orders_created_by_staff_id_fkey(id,username,email),
           measurement:oms_customer_measurements(*)
         `)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching orders:', error);
-        throw error;
+        throw new Error(`Failed to fetch orders: ${error.message}`);
       }
 
       return data || [];
@@ -33,18 +34,18 @@ export const orderService = {
         .from('oms_orders')
         .select(`
           *,
-          customer:oms_customers(id, name, phone, email),
-          store:oms_stores(id, name, code),
-          assigned_user:oms_users(id, username, email),
-          measurement:oms_customer_measurements(*),
-          items:oms_order_items(*)
+          customer:oms_customers(id,name,phone,email),
+          store:oms_stores(id,name,code),
+          assigned_to:oms_users!oms_orders_assigned_to_fkey(id,username,email),
+          created_by_staff:oms_users!oms_orders_created_by_staff_id_fkey(id,username,email),
+          measurement:oms_customer_measurements(*)
         `)
         .eq('id', id)
         .single();
 
       if (error) {
         console.error('Error fetching order:', error);
-        throw error;
+        throw new Error(`Failed to fetch order: ${error.message}`);
       }
 
       return data;
@@ -54,22 +55,24 @@ export const orderService = {
     }
   },
 
-  async create(order: Partial<Order>): Promise<Order> {
+  async create(orderData: Partial<Order>): Promise<Order> {
     try {
       const { data, error } = await supabase
         .from('oms_orders')
-        .insert([order])
+        .insert([orderData])
         .select(`
           *,
-          customer:oms_customers(id, name, phone, email),
-          store:oms_stores(id, name, code),
-          assigned_user:oms_users(id, username, email)
+          customer:oms_customers(id,name,phone,email),
+          store:oms_stores(id,name,code),
+          assigned_to:oms_users!oms_orders_assigned_to_fkey(id,username,email),
+          created_by_staff:oms_users!oms_orders_created_by_staff_id_fkey(id,username,email),
+          measurement:oms_customer_measurements(*)
         `)
         .single();
 
       if (error) {
         console.error('Error creating order:', error);
-        throw error;
+        throw new Error(`Failed to create order: ${error.message}`);
       }
 
       return data;
@@ -79,66 +82,30 @@ export const orderService = {
     }
   },
 
-  async update(id: string, updates: Partial<Order>): Promise<Order> {
+  async update(id: string, orderData: Partial<Order>): Promise<Order> {
     try {
       const { data, error } = await supabase
         .from('oms_orders')
-        .update(updates)
+        .update(orderData)
         .eq('id', id)
         .select(`
           *,
-          customer:oms_customers(id, name, phone, email),
-          store:oms_stores(id, name, code),
-          assigned_user:oms_users(id, username, email)
+          customer:oms_customers(id,name,phone,email),
+          store:oms_stores(id,name,code),
+          assigned_to:oms_users!oms_orders_assigned_to_fkey(id,username,email),
+          created_by_staff:oms_users!oms_orders_created_by_staff_id_fkey(id,username,email),
+          measurement:oms_customer_measurements(*)
         `)
         .single();
 
       if (error) {
         console.error('Error updating order:', error);
-        throw error;
+        throw new Error(`Failed to update order: ${error.message}`);
       }
 
       return data;
     } catch (error) {
       console.error('Error in orderService.update:', error);
-      throw error;
-    }
-  },
-
-  async updateStatus(id: string, status: OrderStatus, notes?: string): Promise<Order> {
-    try {
-      const { data, error } = await supabase
-        .from('oms_orders')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select(`
-          *,
-          customer:oms_customers(id, name, phone, email),
-          store:oms_stores(id, name, code),
-          assigned_user:oms_users(id, username, email)
-        `)
-        .single();
-
-      if (error) {
-        console.error('Error updating order status:', error);
-        throw error;
-      }
-
-      // Create status history entry
-      if (notes) {
-        await supabase
-          .from('oms_order_status_history')
-          .insert([{
-            order_id: id,
-            status,
-            notes,
-            updated_by_name: 'System' // You might want to get this from auth context
-          }]);
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error in orderService.updateStatus:', error);
       throw error;
     }
   },
@@ -152,10 +119,42 @@ export const orderService = {
 
       if (error) {
         console.error('Error deleting order:', error);
-        throw error;
+        throw new Error(`Failed to delete order: ${error.message}`);
       }
     } catch (error) {
       console.error('Error in orderService.delete:', error);
+      throw error;
+    }
+  },
+
+  async updateStatus(id: string, status: string, notes?: string): Promise<Order> {
+    try {
+      const { data, error } = await supabase
+        .from('oms_orders')
+        .update({ 
+          status,
+          notes: notes || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select(`
+          *,
+          customer:oms_customers(id,name,phone,email),
+          store:oms_stores(id,name,code),
+          assigned_to:oms_users!oms_orders_assigned_to_fkey(id,username,email),
+          created_by_staff:oms_users!oms_orders_created_by_staff_id_fkey(id,username,email),
+          measurement:oms_customer_measurements(*)
+        `)
+        .single();
+
+      if (error) {
+        console.error('Error updating order status:', error);
+        throw new Error(`Failed to update order status: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in orderService.updateStatus:', error);
       throw error;
     }
   },
@@ -166,16 +165,18 @@ export const orderService = {
         .from('oms_orders')
         .select(`
           *,
-          customer:oms_customers(id, name, phone, email),
-          store:oms_stores(id, name, code),
-          assigned_user:oms_users(id, username, email)
+          customer:oms_customers(id,name,phone,email),
+          store:oms_stores(id,name,code),
+          assigned_to:oms_users!oms_orders_assigned_to_fkey(id,username,email),
+          created_by_staff:oms_users!oms_orders_created_by_staff_id_fkey(id,username,email),
+          measurement:oms_customer_measurements(*)
         `)
         .eq('customer_id', customerId)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching customer orders:', error);
-        throw error;
+        throw new Error(`Failed to fetch customer orders: ${error.message}`);
       }
 
       return data || [];
@@ -185,54 +186,30 @@ export const orderService = {
     }
   },
 
-  async getByStoreId(storeId: string): Promise<Order[]> {
+  async getByStatus(status: string): Promise<Order[]> {
     try {
       const { data, error } = await supabase
         .from('oms_orders')
         .select(`
           *,
-          customer:oms_customers(id, name, phone, email),
-          store:oms_stores(id, name, code),
-          assigned_user:oms_users(id, username, email)
+          customer:oms_customers(id,name,phone,email),
+          store:oms_stores(id,name,code),
+          assigned_to:oms_users!oms_orders_assigned_to_fkey(id,username,email),
+          created_by_staff:oms_users!oms_orders_created_by_staff_id_fkey(id,username,email),
+          measurement:oms_customer_measurements(*)
         `)
-        .eq('store_id', storeId)
+        .eq('status', status)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching store orders:', error);
-        throw error;
+        console.error('Error fetching orders by status:', error);
+        throw new Error(`Failed to fetch orders by status: ${error.message}`);
       }
 
       return data || [];
     } catch (error) {
-      console.error('Error in orderService.getByStoreId:', error);
-      throw error;
-    }
-  },
-
-  async getStatusHistory(orderId: string) {
-    try {
-      const { data, error } = await supabase
-        .from('oms_order_status_history')
-        .select('*')
-        .eq('order_id', orderId)
-        .order('timestamp', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching order status history:', error);
-        throw error;
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Error in orderService.getStatusHistory:', error);
+      console.error('Error in orderService.getByStatus:', error);
       throw error;
     }
   }
 };
-
-// Export standalone function for backward compatibility
-export const createOrder = orderService.create;
-
-// Default export for compatibility
-export default orderService;
