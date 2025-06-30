@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
-import { X, User, Phone, Mail, MapPin } from 'lucide-react';
-import { Customer } from '../../../types/oms';
-import { customerService } from '../../../services/customer-service';
+import { X, User, Mail, Phone, MapPin } from 'lucide-react';
+import { createCustomer } from '../../../services/customer-service';
+import { generateCustomerId } from '../../../utils/id-generators';
 
 interface NewCustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCustomerCreated: (customer: Customer) => void;
+  onCustomerCreated: (customer: any) => void;
 }
 
 export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
   isOpen,
   onClose,
-  onCustomerCreated
+  onCustomerCreated,
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -25,10 +25,9 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
     address_country: 'India',
     communication_email: true,
     communication_sms: true,
-    communication_whatsapp: true
+    communication_whatsapp: true,
   });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,8 +40,8 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     setError(null);
-    setIsSubmitting(true);
 
     try {
       // Validate required fields
@@ -53,11 +52,28 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
         throw new Error('Phone number is required');
       }
 
-      console.log('Submitting customer data:', formData);
-
-      const newCustomer = await customerService.createCustomer(formData);
+      // Generate customer ID
+      const customerId = generateCustomerId();
       
+      const customerData = {
+        id: customerId,
+        ...formData,
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
+        email: formData.email.trim() || null,
+        address_street: formData.address_street.trim() || null,
+        address_city: formData.address_city.trim() || null,
+        address_state: formData.address_state.trim() || null,
+        address_pin_code: formData.address_pin_code.trim() || null,
+      };
+
+      console.log('Creating customer with data:', customerData);
+      
+      const newCustomer = await createCustomer(customerData);
       console.log('Customer created successfully:', newCustomer);
+      
+      onCustomerCreated(newCustomer);
+      onClose();
       
       // Reset form
       setFormData({
@@ -71,35 +87,18 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
         address_country: 'India',
         communication_email: true,
         communication_sms: true,
-        communication_whatsapp: true
+        communication_whatsapp: true,
       });
-
-      // Notify parent component
-      onCustomerCreated(newCustomer);
-      onClose();
     } catch (err) {
       console.error('Error creating customer:', err);
       setError(err instanceof Error ? err.message : 'Failed to create customer');
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
   const handleClose = () => {
     setError(null);
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      address_street: '',
-      address_city: '',
-      address_state: '',
-      address_pin_code: '',
-      address_country: 'India',
-      communication_email: true,
-      communication_sms: true,
-      communication_whatsapp: true
-    });
     onClose();
   };
 
@@ -108,26 +107,24 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-            <User className="w-5 h-5" />
+        <div className="flex items-center justify-between p-6 border-b">
+          <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+            <User className="w-5 h-5 mr-2" />
             Add New Customer
           </h2>
           <button
             onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
-            disabled={isSubmitting}
+            disabled={isLoading}
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4">
-              <p className="text-red-800 text-sm">{error}</p>
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+              {error}
             </div>
           )}
 
@@ -151,7 +148,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter customer name"
                     required
-                    disabled={isSubmitting}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -171,7 +168,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter phone number"
                     required
-                    disabled={isSubmitting}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -191,7 +188,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                   onChange={handleInputChange}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter email address"
-                  disabled={isSubmitting}
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -199,8 +196,8 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
 
           {/* Address Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
-              <MapPin className="w-5 h-5" />
+            <h3 className="text-lg font-medium text-gray-900 flex items-center">
+              <MapPin className="w-5 h-5 mr-2" />
               Address Information
             </h3>
             
@@ -216,7 +213,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter street address"
-                disabled={isSubmitting}
+                disabled={isLoading}
               />
             </div>
 
@@ -233,7 +230,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter city"
-                  disabled={isSubmitting}
+                  disabled={isLoading}
                 />
               </div>
 
@@ -249,7 +246,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter state"
-                  disabled={isSubmitting}
+                  disabled={isLoading}
                 />
               </div>
 
@@ -265,7 +262,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter PIN code"
-                  disabled={isSubmitting}
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -275,7 +272,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">Communication Preferences</h3>
             
-            <div className="space-y-3">
+            <div className="space-y-2">
               <label className="flex items-center">
                 <input
                   type="checkbox"
@@ -283,11 +280,11 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                   checked={formData.communication_email}
                   onChange={handleInputChange}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  disabled={isSubmitting}
+                  disabled={isLoading}
                 />
                 <span className="ml-2 text-sm text-gray-700">Email notifications</span>
               </label>
-
+              
               <label className="flex items-center">
                 <input
                   type="checkbox"
@@ -295,11 +292,11 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                   checked={formData.communication_sms}
                   onChange={handleInputChange}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  disabled={isSubmitting}
+                  disabled={isLoading}
                 />
                 <span className="ml-2 text-sm text-gray-700">SMS notifications</span>
               </label>
-
+              
               <label className="flex items-center">
                 <input
                   type="checkbox"
@@ -307,7 +304,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                   checked={formData.communication_whatsapp}
                   onChange={handleInputChange}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  disabled={isSubmitting}
+                  disabled={isLoading}
                 />
                 <span className="ml-2 text-sm text-gray-700">WhatsApp notifications</span>
               </label>
@@ -315,21 +312,28 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
           </div>
 
           {/* Form Actions */}
-          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+          <div className="flex justify-end space-x-3 pt-6 border-t">
             <button
               type="button"
               onClick={handleClose}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-              disabled={isSubmitting}
+              disabled={isLoading}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isSubmitting}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              disabled={isLoading}
             >
-              {isSubmitting ? 'Creating...' : 'Create Customer'}
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Creating...
+                </>
+              ) : (
+                'Create Customer'
+              )}
             </button>
           </div>
         </form>
