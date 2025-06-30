@@ -105,9 +105,10 @@ export default function NewOrderModal({ isOpen, onClose, onOrderCreated, selecte
   const loadCustomers = async () => {
     try {
       const data = await getCustomers();
-      setCustomers(data);
+      setCustomers(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error loading customers:', error);
+      setCustomers([]);
     }
   };
 
@@ -356,7 +357,7 @@ export default function NewOrderModal({ isOpen, onClose, onOrderCreated, selecte
                       }`}
                     >
                       <option value="">Select Customer</option>
-                      {customers.map(customer => (
+                      {(customers || []).map(customer => (
                         <option key={customer.id} value={customer.id}>
                           {customer.name} - {customer.phone}
                         </option>
