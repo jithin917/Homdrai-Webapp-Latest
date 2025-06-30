@@ -8,7 +8,7 @@ interface NewCustomerModalProps {
   onCustomerCreated: () => void;
 }
 
-const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ onClose, onCustomerCreated }) => {
+export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ onClose, onCustomerCreated }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
