@@ -36,28 +36,32 @@ const OMSDashboard: React.FC = () => {
         dashboardService.getStats()
       ]);
 
-      setOrders(ordersData);
-      setCustomers(customersData);
-      setStores(storesData);
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
+      setCustomers(Array.isArray(customersData) ? customersData : []);
+      setStores(Array.isArray(storesData) ? storesData : []);
       setStats(statsData);
     } catch (err) {
       console.error('Error loading dashboard data:', err);
       setError('Failed to load dashboard data');
+      // Ensure arrays remain as arrays even on error
+      setOrders([]);
+      setCustomers([]);
+      setStores([]);
     } finally {
       setLoading(false);
     }
   };
 
   const handleOrderCreated = (newOrder: Order) => {
-    setOrders(prev => [newOrder, ...prev]);
+    setOrders(prev => Array.isArray(prev) ? [newOrder, ...prev] : [newOrder]);
     setShowNewOrderModal(false);
     loadDashboardData(); // Refresh stats
   };
 
   const handleOrderUpdated = (updatedOrder: Order) => {
-    setOrders(prev => prev.map(order => 
+    setOrders(prev => Array.isArray(prev) ? prev.map(order => 
       order.id === updatedOrder.id ? updatedOrder : order
-    ));
+    ) : [updatedOrder]);
     setSelectedOrder(null);
     loadDashboardData(); // Refresh stats
   };
@@ -72,7 +76,7 @@ const OMSDashboard: React.FC = () => {
     return store?.name || 'Unknown Store';
   };
 
-  const filteredOrders = orders.filter(order => {
+  const filteredOrders = (Array.isArray(orders) ? orders : []).filter(order => {
     const matchesSearch = 
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       getCustomerName(order.customerId).toLowerCase().includes(searchTerm.toLowerCase()) ||
