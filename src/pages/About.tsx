@@ -1,7 +1,7 @@
 import React from 'react';
 import { Award, Heart, Users, Sparkles } from 'lucide-react';
 
-const About = () => {
+export const About = () => {
   return (
     <div className="pt-16">
       {/* Hero Section */}
