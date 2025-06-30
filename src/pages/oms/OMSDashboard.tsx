@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Calendar, Users, Package, TrendingUp, Clock, AlertCircle } from 'lucide-react';
-import { orderService } from '../services/order-service';
-import { customerService } from '../services/customer-service';
-import { storeService } from '../services/store-service';
-import { dashboardService } from '../services/dashboard-service';
-import { Order, Customer, Store, DashboardStats } from '../types/oms';
+import { orderService } from '../../services/order-service';
+import { customerService } from '../../services/customer-service';
+import { storeService } from '../../services/store-service';
+import { dashboardService } from '../../services/dashboard-service';
+import { Order, Customer, Store, DashboardStats } from '../../types/oms';
 import NewOrderModal from './components/NewOrderModal';
 import OrderDetailsModal from './components/OrderDetailsModal';
 
