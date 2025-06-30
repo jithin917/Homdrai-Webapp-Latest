@@ -1,3 +1,5 @@
+#Files currspond to OMS Module - ALl the modules are currently ignored
+
 /orders/**/*
 /checkout/**/*
 /payment-processing/**/*
