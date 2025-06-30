@@ -69,7 +69,7 @@ interface OrderMeasurements {
   notes?: string;
 }
 
-const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ 
+export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ 
   order, 
   isOpen, 
   onClose, 
@@ -505,5 +505,3 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
     </div>
   );
 };
-
-export default OrderDetailsModal;
