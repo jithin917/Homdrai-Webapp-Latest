@@ -234,3 +234,16 @@ export async function updateCustomerMeasurements(
     throw error;
   }
 }
+
+// Export customerService object containing all functions
+export const customerService = {
+  getCustomers,
+  createCustomer,
+  updateCustomer,
+  deleteCustomer,
+  searchCustomers,
+  getCustomerById,
+  getCustomerMeasurements,
+  createCustomerMeasurements,
+  updateCustomerMeasurements,
+};
