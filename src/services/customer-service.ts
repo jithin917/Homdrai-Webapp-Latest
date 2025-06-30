@@ -65,6 +65,48 @@ export const customerService = {
   },
 
   /**
+   * Gets all customers
+   * 
+   * @returns API response with all customers
+   */
+  getAll: async (): Promise<ApiResponse<Customer[]>> => {
+    try {
+      const { data, error } = await supabase
+        .from('oms_customers')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const customers: Customer[] = data.map(item => ({
+        id: item.id,
+        name: item.name,
+        email: item.email,
+        phone: item.phone,
+        address: {
+          street: item.address_street,
+          city: item.address_city,
+          state: item.address_state,
+          pinCode: item.address_pin_code,
+          country: item.address_country
+        },
+        orderHistory: [],
+        communicationPreferences: {
+          email: item.communication_email,
+          sms: item.communication_sms,
+          whatsapp: item.communication_whatsapp
+        },
+        createdAt: new Date(item.created_at),
+        updatedAt: new Date(item.updated_at)
+      }));
+
+      return { success: true, data: customers };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Failed to fetch customers' };
+    }
+  },
+
+  /**
    * Gets a customer by ID
    * 
    * @param id - The customer ID
@@ -227,6 +269,7 @@ export const customerService = {
 
 // Export individual functions for backward compatibility
 export const createCustomer = customerService.create;
+export const getCustomers = customerService.getAll;
 export const getCustomerById = customerService.getById;
 export const searchCustomers = customerService.search;
 export const updateCustomer = customerService.update;
