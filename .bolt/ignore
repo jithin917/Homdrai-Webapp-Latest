@@ -1,130 +1,78 @@
-# Dependencies
+# Standard ignores
 node_modules/
-npm-debug.log
-yarn-debug.log
-yarn-error.log
-.pnp/
-.pnp.js
-
-# Build outputs
 dist/
-build/
-out/
-.next/
-.nuxt/
-.output/
-.cache/
-public/dist/
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env*.local
-
-# IDE and editor files
-.idea/
-.vscode/
-*.sublime-project
-*.sublime-workspace
-.project
-.classpath
-.settings/
-*.swp
-*.swo
-*~
-.DS_Store
-Thumbs.db
-
-# Testing and coverage
-coverage/
-.nyc_output/
-.jest/
-__tests__/
-__mocks__/
-*.test.js
-*.spec.js
-test-results/
-
-# Logs and debugging
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-debug.log
-.debug/
-
-# Temporary files
-tmp/
-temp/
-.temp/
-*.tmp
-*.bak
-*.swp
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Package manager files
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-.yarn/
-.yarnrc
-.npmrc
-
-# Large media files
-*.mp4
-*.tiff
-*.avi
-*.flv
-*.mov
-*.wmv
-*.mp3
-*.wav
-*.flac
-
-# Compiled binaries
-*.com
-*.class
-*.dll
-*.exe
-*.o
-*.so
-
-# Archives
-*.7z
-*.dmg
-*.gz
-*.iso
-*.jar
-*.rar
-*.tar
-*.zip
-
-# Bolt-specific files
-.bolt/cache/
-.bolt/tmp/
-.bolt/logs/
-
-# Supabase
-.supabase/local/
-
-# Miscellaneous
 .git/
 .github/
-.gitlab/
-.circleci/
-.travis.yml
-.dockerignore
-Dockerfile
-docker-compose.yml
+.vscode/
+.idea/
+*.log
+*.lock
+*.tgz
+*.zip
+*.tar.gz
+coverage/
+.nyc_output/
+.DS_Store
+Thumbs.db
+
+# Ignore everything by default
+*
+
+# Allow core configuration files
+!package.json
+!tsconfig.json
+!tsconfig.*.json
+!vite.config.ts
+!tailwind.config.js
+!postcss.config.js
+!index.html
+
+# Allow main entry points
+!src/main.tsx
+!src/App.tsx
+!src/index.css
+
+# New Order Form Focus Section
+# ---------------------------
+# Allow only files needed for the New Order form functionality
+
+# Core types
+!src/types/oms.ts
+!src/types/oms-api.ts
+
+# Core utilities
+!src/utils/date-utils.ts
+!src/utils/id-generators.ts
+
+# Services
+!src/services/auth-service.ts
+!src/services/customer-service.ts
+!src/services/order-service.ts
+!src/services/store-service.ts
+!src/services/dashboard-service.ts
+!src/services/measurements-service.ts
+
+# API integration
+!src/lib/supabase.ts
+!src/lib/oms-api.ts
+
+# Components
+!src/pages/oms/components/NewOrderModal.tsx
+!src/pages/oms/components/NewCustomerModal.tsx
+
+# Allow minimal OMS Dashboard to access the New Order form
+!src/pages/oms/OMSDashboard.tsx
+!src/pages/oms/OMSLogin.tsx
+
+# Ignore everything else in these directories
+src/pages/admin/**
+src/pages/partner/**
+src/pages/AIStylistChat.tsx
+src/pages/Auth.tsx
+src/pages/Contact.tsx
+src/pages/DressDesigner.tsx
+src/pages/Home.tsx
+src/pages/Partnerships.tsx
+src/pages/SavedDesigns.tsx
+src/pages/ServiceDetail.tsx
+src/pages/Services.tsx
