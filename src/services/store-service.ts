@@ -1,94 +1,136 @@
 import { supabase } from '../lib/supabase';
-import { Store } from '../types/oms';
-import { ApiResponse } from '../types/oms-api';
+import type { Store } from '../types/oms';
 
-/**
- * Store management service
- */
 export const storeService = {
-  /**
-   * Gets all active stores
-   * 
-   * @returns API response with all stores
-   */
-  getAll: async (): Promise<ApiResponse<Store[]>> => {
+  async getAll(): Promise<Store[]> {
     try {
       const { data, error } = await supabase
         .from('oms_stores')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
+        .select(`
+          *,
+          manager:oms_users(id, username, email)
+        `)
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching stores:', error);
+        throw error;
+      }
 
-      const stores: Store[] = (data || []).map(item => ({
-        id: item.id,
-        code: item.code,
-        name: item.name,
-        address: {
-          street: item.address_street,
-          city: item.address_city,
-          state: item.address_state,
-          pinCode: item.address_pin_code,
-          country: item.address_country
-        },
-        phone: item.phone,
-        email: item.email,
-        managerId: item.manager_id,
-        isActive: item.is_active,
-        createdAt: new Date(item.created_at),
-        updatedAt: new Date(item.updated_at)
-      }));
-
-      return { success: true, data: stores };
-    } catch (error: any) {
-      return { success: false, error: error.message || 'Failed to fetch stores' };
+      return data || [];
+    } catch (error) {
+      console.error('Error in storeService.getAll:', error);
+      throw error;
     }
   },
 
-  /**
-   * Gets the first active store (for fallback purposes)
-   * 
-   * @returns API response with a single store or null
-   */
-  getFirstActive: async (): Promise<ApiResponse<Store | null>> => {
+  async getById(id: string): Promise<Store | null> {
     try {
       const { data, error } = await supabase
         .from('oms_stores')
-        .select('*')
-        .eq('is_active', true)
-        .order('name')
-        .limit(1)
-        .maybeSingle();
+        .select(`
+          *,
+          manager:oms_users(id, username, email)
+        `)
+        .eq('id', id)
+        .single();
 
-      if (error) throw error;
-
-      if (!data) {
-        return { success: true, data: null };
+      if (error) {
+        console.error('Error fetching store:', error);
+        throw error;
       }
 
-      const store: Store = {
-        id: data.id,
-        code: data.code,
-        name: data.name,
-        address: {
-          street: data.address_street,
-          city: data.address_city,
-          state: data.address_state,
-          pinCode: data.address_pin_code,
-          country: data.address_country
-        },
-        phone: data.phone,
-        email: data.email,
-        managerId: data.manager_id,
-        isActive: data.is_active,
-        createdAt: new Date(data.created_at),
-        updatedAt: new Date(data.updated_at)
-      };
+      return data;
+    } catch (error) {
+      console.error('Error in storeService.getById:', error);
+      throw error;
+    }
+  },
 
-      return { success: true, data: store };
-    } catch (error: any) {
-      return { success: false, error: error.message || 'Failed to fetch store' };
+  async create(store: Omit<Store, 'id' | 'created_at' | 'updated_at'>): Promise<Store> {
+    try {
+      const { data, error } = await supabase
+        .from('oms_stores')
+        .insert([store])
+        .select(`
+          *,
+          manager:oms_users(id, username, email)
+        `)
+        .single();
+
+      if (error) {
+        console.error('Error creating store:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in storeService.create:', error);
+      throw error;
+    }
+  },
+
+  async update(id: string, updates: Partial<Store>): Promise<Store> {
+    try {
+      const { data, error } = await supabase
+        .from('oms_stores')
+        .update(updates)
+        .eq('id', id)
+        .select(`
+          *,
+          manager:oms_users(id, username, email)
+        `)
+        .single();
+
+      if (error) {
+        console.error('Error updating store:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in storeService.update:', error);
+      throw error;
+    }
+  },
+
+  async delete(id: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('oms_stores')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting store:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in storeService.delete:', error);
+      throw error;
+    }
+  },
+
+  async getActiveStores(): Promise<Store[]> {
+    try {
+      const { data, error } = await supabase
+        .from('oms_stores')
+        .select(`
+          *,
+          manager:oms_users(id, username, email)
+        `)
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching active stores:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in storeService.getActiveStores:', error);
+      throw error;
     }
   }
 };

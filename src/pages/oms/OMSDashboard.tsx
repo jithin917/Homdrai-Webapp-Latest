@@ -4,22 +4,39 @@ import { orderService } from "../../services/order-service";
 import { customerService } from "../../services/customer-service";
 import { storeService } from "../../services/store-service";
 import { dashboardService } from "../../services/dashboard-service";
-import { Order, Customer, Store } from "../../types/oms";
+import type { Order, Customer, Store } from "../../types/oms";
 import NewOrderModal from "./components/NewOrderModal";
-import NewCustomerModal from "./components/NewCustomerModal";
 import OrderDetailsModal from "./components/OrderDetailsModal";
 
-export default function OMSDashboard() {
+interface DashboardStats {
+  totalOrders: number;
+  pendingOrders: number;
+  totalCustomers: number;
+  todayRevenue: number;
+  recentOrders: Order[];
+  ordersByStatus: Record<string, number>;
+  dailySales: any[];
+}
+
+const OMSDashboard: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalOrders: 0,
+    pendingOrders: 0,
+    totalCustomers: 0,
+    todayRevenue: 0,
+    recentOrders: [],
+    ordersByStatus: {},
+    dailySales: []
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showNewOrderModal, setShowNewOrderModal] = useState(false);
-  const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showNewOrderModal, setShowNewOrderModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -29,21 +46,25 @@ export default function OMSDashboard() {
     try {
       setLoading(true);
       setError(null);
-      
-      const [ordersData, customersData, storesData] = await Promise.all([
+
+      // Load all data in parallel
+      const [ordersData, customersData, storesData, statsData] = await Promise.all([
         orderService.getAll(),
         customerService.getAll(),
-        storeService.getAll()
+        storeService.getAll(),
+        dashboardService.getDashboardStats()
       ]);
 
-      // Ensure orders is always an array
+      // Ensure all data is arrays
       setOrders(Array.isArray(ordersData) ? ordersData : []);
       setCustomers(Array.isArray(customersData) ? customersData : []);
       setStores(Array.isArray(storesData) ? storesData : []);
-    } catch (err) {
-      console.error('Error loading dashboard data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
-      // Set empty arrays on error to prevent filter issues
+      setStats(statsData);
+
+    } catch (error) {
+      console.error("Error loading dashboard data:", error);
+      setError(error instanceof Error ? error.message : "Failed to load dashboard data");
+      // Set empty arrays on error
       setOrders([]);
       setCustomers([]);
       setStores([]);
@@ -52,44 +73,58 @@ export default function OMSDashboard() {
     }
   };
 
-  const handleOrderCreated = (newOrder: Order) => {
-    setOrders(prev => [newOrder, ...prev]);
-    setShowNewOrderModal(false);
-  };
-
-  const handleCustomerCreated = (newCustomer: Customer) => {
-    setCustomers(prev => [newCustomer, ...prev]);
-    setShowNewCustomerModal(false);
-  };
-
-  const handleOrderUpdated = (updatedOrder: Order) => {
-    setOrders(prev => prev.map(order => 
-      order.id === updatedOrder.id ? updatedOrder : order
-    ));
-    setSelectedOrder(updatedOrder);
-  };
-
-  // Ensure orders is always an array before filtering
+  // Ensure orders is always an array for filtering
   const safeOrders = Array.isArray(orders) ? orders : [];
-  
-  const filteredOrders = safeOrders.filter(order => {
-    const matchesSearch = !searchTerm || 
+
+  const filteredOrders = safeOrders.filter((order) => {
+    const matchesSearch = 
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.garment_type?.toLowerCase().includes(searchTerm.toLowerCase());
+      order.customer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.garment_type.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
-  const recentOrders = filteredOrders.slice(0, 5);
+  const getStatusColor = (status: string) => {
+    const colors = {
+      pending: "bg-yellow-100 text-yellow-800",
+      confirmed: "bg-blue-100 text-blue-800",
+      in_progress: "bg-purple-100 text-purple-800",
+      fitting_scheduled: "bg-orange-100 text-orange-800",
+      ready: "bg-green-100 text-green-800",
+      delivered: "bg-gray-100 text-gray-800",
+      cancelled: "bg-red-100 text-red-800",
+    };
+    return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800";
+  };
 
-  // Dashboard stats - use safeOrders to prevent errors
-  const totalOrders = safeOrders.length;
-  const pendingOrders = safeOrders.filter(o => o.status === 'pending').length;
-  const completedOrders = safeOrders.filter(o => o.status === 'delivered').length;
-  const totalRevenue = safeOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+  const getPriorityColor = (priority: string) => {
+    const colors = {
+      low: "text-green-600",
+      medium: "text-yellow-600",
+      high: "text-orange-600",
+      urgent: "text-red-600",
+    };
+    return colors[priority as keyof typeof colors] || "text-gray-600";
+  };
+
+  const formatCurrency = (amount: number | string) => {
+    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+    }).format(num || 0);
+  };
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
 
   if (loading) {
     return (
@@ -126,7 +161,7 @@ export default function OMSDashboard() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Order Management Dashboard</h1>
-          <p className="text-gray-600 mt-2">Manage your tailoring orders and customers</p>
+          <p className="text-gray-600 mt-2">Manage your tailoring orders and track business performance</p>
         </div>
 
         {/* Stats Cards */}
@@ -136,7 +171,7 @@ export default function OMSDashboard() {
               <Package className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                <p className="text-2xl font-bold text-gray-900">{totalOrders}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalOrders}</p>
               </div>
             </div>
           </div>
@@ -146,89 +181,73 @@ export default function OMSDashboard() {
               <Clock className="h-8 w-8 text-yellow-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Pending Orders</p>
-                <p className="text-2xl font-bold text-gray-900">{pendingOrders}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.pendingOrders}</p>
               </div>
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-green-600" />
+              <Users className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Completed</p>
-                <p className="text-2xl font-bold text-gray-900">{completedOrders}</p>
+                <p className="text-sm font-medium text-gray-600">Total Customers</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalCustomers}</p>
               </div>
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
-              <Users className="h-8 w-8 text-purple-600" />
+              <TrendingUp className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">₹{totalRevenue.toLocaleString()}</p>
+                <p className="text-sm font-medium text-gray-600">Today's Revenue</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.todayRevenue)}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-4 mb-8">
-          <button
-            onClick={() => setShowNewOrderModal(true)}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-          >
-            <Plus className="h-5 w-5" />
-            New Order
-          </button>
-          <button
-            onClick={() => setShowNewCustomerModal(true)}
-            className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 flex items-center gap-2"
-          >
-            <Users className="h-5 w-5" />
-            New Customer
-          </button>
-        </div>
-
-        {/* Search and Filter */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <input
-                  type="text"
-                  placeholder="Search orders by ID, customer name, or garment type..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-            <div className="sm:w-48">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="in_progress">In Progress</option>
-                <option value="fitting_scheduled">Fitting Scheduled</option>
-                <option value="ready">Ready</option>
-                <option value="delivered">Delivered</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Orders */}
+        {/* Orders Section */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Orders</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-lg font-medium text-gray-900">Recent Orders</h2>
+              <div className="mt-4 sm:mt-0 flex space-x-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <input
+                    type="text"
+                    placeholder="Search orders..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="fitting_scheduled">Fitting Scheduled</option>
+                  <option value="ready">Ready</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+                <button
+                  onClick={() => setShowNewOrderModal(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>New Order</span>
+                </button>
+              </div>
+            </div>
           </div>
+
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -243,13 +262,16 @@ export default function OMSDashboard() {
                     Garment
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Expected Delivery
+                    Priority
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Delivery Date
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -257,55 +279,60 @@ export default function OMSDashboard() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {recentOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {order.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.customer_name || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.garment_type}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ₹{order.total_amount?.toLocaleString() || '0'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                        order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        order.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                        order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {order.status?.replace('_', ' ').toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.expected_delivery_date ? 
-                        new Date(order.expected_delivery_date).toLocaleDateString() : 
-                        'Not set'
-                      }
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => setSelectedOrder(order)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        View Details
-                      </button>
+                {filteredOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                      {searchTerm || statusFilter !== "all" ? "No orders match your filters" : "No orders found"}
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredOrders.map((order) => (
+                    <tr key={order.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {order.id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {order.customer?.name || 'Unknown Customer'}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {order.customer?.phone}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {order.garment_type}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                          {order.status.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`text-sm font-medium ${getPriorityColor(order.priority)}`}>
+                          {order.priority}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatCurrency(order.total_amount)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatDate(order.expected_delivery_date)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => setSelectedOrder(order)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
-            {recentOrders.length === 0 && (
-              <div className="text-center py-8">
-                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No orders found</p>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -313,29 +340,22 @@ export default function OMSDashboard() {
       {/* Modals */}
       {showNewOrderModal && (
         <NewOrderModal
+          isOpen={showNewOrderModal}
           onClose={() => setShowNewOrderModal(false)}
-          onOrderCreated={handleOrderCreated}
-          customers={customers}
-          stores={stores}
-        />
-      )}
-
-      {showNewCustomerModal && (
-        <NewCustomerModal
-          onClose={() => setShowNewCustomerModal(false)}
-          onCustomerCreated={handleCustomerCreated}
+          onOrderCreated={loadDashboardData}
         />
       )}
 
       {selectedOrder && (
         <OrderDetailsModal
-          order={selectedOrder}
+          isOpen={!!selectedOrder}
           onClose={() => setSelectedOrder(null)}
-          onOrderUpdated={handleOrderUpdated}
-          customers={customers}
-          stores={stores}
+          order={selectedOrder}
+          onOrderUpdated={loadDashboardData}
         />
       )}
     </div>
   );
-}
+};
+
+export default OMSDashboard;

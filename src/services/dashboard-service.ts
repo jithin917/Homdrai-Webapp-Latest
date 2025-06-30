@@ -1,78 +1,115 @@
 import { supabase } from '../lib/supabase';
-import { ApiResponse } from '../types/oms-api';
-import { DashboardStats } from '../types/oms-api';
 
-/**
- * Dashboard statistics service
- */
 export const dashboardService = {
-  /**
-   * Gets dashboard statistics
-   * 
-   * @returns API response with dashboard statistics
-   */
-  getStats: async (): Promise<ApiResponse<DashboardStats>> => {
+  async getDashboardStats() {
     try {
-      const { data: orders, error: ordersError } = await supabase
+      // Get total orders count
+      const { count: totalOrders } = await supabase
         .from('oms_orders')
-        .select('*');
+        .select('*', { count: 'exact', head: true });
 
-      if (ordersError) throw ordersError;
+      // Get pending orders count
+      const { count: pendingOrders } = await supabase
+        .from('oms_orders')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['pending', 'confirmed', 'in_progress']);
 
-      const { data: customers, error: customersError } = await supabase
+      // Get total customers count
+      const { count: totalCustomers } = await supabase
         .from('oms_customers')
-        .select('id');
+        .select('*', { count: 'exact', head: true });
 
-      if (customersError) throw customersError;
+      // Get today's revenue
+      const today = new Date().toISOString().split('T')[0];
+      const { data: todayOrders } = await supabase
+        .from('oms_orders')
+        .select('advance_paid')
+        .gte('created_at', `${today}T00:00:00`)
+        .lt('created_at', `${today}T23:59:59`);
 
-      const { data: stores, error: storesError } = await supabase
-        .from('oms_stores')
-        .select('*');
+      const todayRevenue = todayOrders?.reduce((sum, order) => 
+        sum + (parseFloat(order.advance_paid?.toString() || '0')), 0) || 0;
 
-      if (storesError) throw storesError;
+      // Get recent orders
+      const { data: recentOrders } = await supabase
+        .from('oms_orders')
+        .select(`
+          *,
+          customer:oms_customers(id, name, phone),
+          store:oms_stores(id, name, code)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(10);
 
-      const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-      
-      const monthlyOrders = orders.filter(o => {
-        const orderDate = new Date(o.order_date);
-        return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
-      });
+      // Get orders by status for chart
+      const { data: ordersByStatus } = await supabase
+        .from('oms_orders')
+        .select('status')
+        .order('created_at', { ascending: false });
 
-      const stats: DashboardStats = {
-        totalOrders: orders.length,
-        pendingOrders: orders.filter(o => o.status === 'pending').length,
-        inProgressOrders: orders.filter(o => ['confirmed', 'in_progress', 'fitting_scheduled'].includes(o.status)).length,
-        completedOrders: orders.filter(o => o.status === 'delivered').length,
-        totalRevenue: orders.reduce((sum, o) => sum + parseFloat(o.total_amount), 0),
-        monthlyRevenue: monthlyOrders.reduce((sum, o) => sum + parseFloat(o.total_amount), 0),
-        customerCount: customers.length,
-        storePerformance: stores.map(store => {
-          const storeOrders = orders.filter(o => o.store_id === store.id);
-          const storeRevenue = storeOrders.reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
-          const completedStoreOrders = storeOrders.filter(o => o.status === 'delivered');
-          
-          return {
-            storeId: store.id,
-            storeName: store.name,
-            orderCount: storeOrders.length,
-            revenue: storeRevenue,
-            averageOrderValue: storeOrders.length > 0 ? storeRevenue / storeOrders.length : 0,
-            completionRate: storeOrders.length > 0 ? (completedStoreOrders.length / storeOrders.length) * 100 : 0
-          };
-        })
+      const statusCounts = ordersByStatus?.reduce((acc, order) => {
+        acc[order.status] = (acc[order.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+      // Get daily sales for the last 7 days
+      const { data: dailySales } = await supabase
+        .from('oms_daily_sales')
+        .select('*')
+        .order('order_date', { ascending: false })
+        .limit(7);
+
+      return {
+        totalOrders: totalOrders || 0,
+        pendingOrders: pendingOrders || 0,
+        totalCustomers: totalCustomers || 0,
+        todayRevenue,
+        recentOrders: recentOrders || [],
+        ordersByStatus: statusCounts,
+        dailySales: dailySales || []
       };
-      
-      return { success: true, data: stats };
-    } catch (error: any) {
-      return { success: false, error: error.message || 'Failed to fetch dashboard stats' };
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      throw error;
+    }
+  },
+
+  async getPendingOrders() {
+    try {
+      const { data, error } = await supabase
+        .from('oms_pending_orders')
+        .select('*')
+        .order('expected_delivery_date', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching pending orders:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in dashboardService.getPendingOrders:', error);
+      throw error;
+    }
+  },
+
+  async getOrderSummary() {
+    try {
+      const { data, error } = await supabase
+        .from('oms_order_summary')
+        .select('*')
+        .order('order_date', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.error('Error fetching order summary:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in dashboardService.getOrderSummary:', error);
+      throw error;
     }
   }
 };
-
-/**
- * Standalone function for getting dashboard statistics
- * This is an alias for dashboardService.getStats() to maintain compatibility
- */
-export const getDashboardStats = dashboardService.getStats;
