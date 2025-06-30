@@ -213,3 +213,13 @@ export const orderService = {
     }
   }
 };
+
+// Export individual functions for backward compatibility
+export const createOrder = orderService.create;
+export const getOrders = orderService.getAll;
+export const getOrderById = orderService.getById;
+export const updateOrder = orderService.update;
+export const deleteOrder = orderService.delete;
+export const updateOrderStatus = orderService.updateStatus;
+export const getOrdersByCustomerId = orderService.getByCustomerId;
+export const getOrdersByStatus = orderService.getByStatus;
