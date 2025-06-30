@@ -16,7 +16,7 @@ interface AdminPanelProps {
   onLogout: () => void;
 }
 
-export default function AdminPanel({ onLogout }: AdminPanelProps) {
+export function AdminPanel({ onLogout }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState('users');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
