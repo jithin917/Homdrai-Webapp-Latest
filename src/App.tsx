@@ -15,7 +15,7 @@ import { SavedDesigns } from './pages/SavedDesigns';
 import Auth from './pages/Auth';
 import { OrderTracking } from './pages/oms/OrderTracking';
 import { OMSLogin } from './pages/oms/OMSLogin';
-import { OMSDashboard } from './pages/oms/OMSDashboard';
+import OMSDashboard from './pages/oms/OMSDashboard';
 import { AdminLogin } from './pages/admin/AdminLogin';
 import { AdminPanel } from './pages/admin/AdminPanel';
 import { PartnerLogin } from './pages/partner/PartnerLogin';
