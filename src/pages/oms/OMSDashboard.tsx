@@ -36,12 +36,17 @@ export default function OMSDashboard() {
         storeService.getAll()
       ]);
 
-      setOrders(ordersData || []);
-      setCustomers(customersData || []);
-      setStores(storesData || []);
+      // Ensure orders is always an array
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
+      setCustomers(Array.isArray(customersData) ? customersData : []);
+      setStores(Array.isArray(storesData) ? storesData : []);
     } catch (err) {
       console.error('Error loading dashboard data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
+      // Set empty arrays on error to prevent filter issues
+      setOrders([]);
+      setCustomers([]);
+      setStores([]);
     } finally {
       setLoading(false);
     }
@@ -64,8 +69,10 @@ export default function OMSDashboard() {
     setSelectedOrder(updatedOrder);
   };
 
-  // Add safety check for orders array
-  const filteredOrders = (orders || []).filter(order => {
+  // Ensure orders is always an array before filtering
+  const safeOrders = Array.isArray(orders) ? orders : [];
+  
+  const filteredOrders = safeOrders.filter(order => {
     const matchesSearch = !searchTerm || 
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -78,11 +85,11 @@ export default function OMSDashboard() {
 
   const recentOrders = filteredOrders.slice(0, 5);
 
-  // Dashboard stats
-  const totalOrders = orders.length;
-  const pendingOrders = orders.filter(o => o.status === 'pending').length;
-  const completedOrders = orders.filter(o => o.status === 'delivered').length;
-  const totalRevenue = orders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+  // Dashboard stats - use safeOrders to prevent errors
+  const totalOrders = safeOrders.length;
+  const pendingOrders = safeOrders.filter(o => o.status === 'pending').length;
+  const completedOrders = safeOrders.filter(o => o.status === 'delivered').length;
+  const totalRevenue = safeOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
 
   if (loading) {
     return (
