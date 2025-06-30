@@ -70,3 +70,9 @@ export const dashboardService = {
     }
   }
 };
+
+/**
+ * Standalone function for getting dashboard statistics
+ * This is an alias for dashboardService.getStats() to maintain compatibility
+ */
+export const getDashboardStats = dashboardService.getStats;
