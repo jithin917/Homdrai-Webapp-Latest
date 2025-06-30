@@ -8,10 +8,11 @@ import OrderSlipPrint from './OrderSlipPrint';
 interface OrderDetailsModalProps {
   order: Order;
   onClose: () => void;
-  onStatusUpdate: (status: Order['status']) => void;
+  onOrderUpdated?: () => void;
+  isOpen: boolean;
 }
 
-const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, onStatusUpdate }) => {
+const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, onOrderUpdated, isOpen }) => {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
@@ -46,7 +47,9 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
     setStatusUpdateLoading(true);
     try {
       await orderAPI.updateStatus(order.id, newStatus, statusNote);
-      onStatusUpdate(newStatus);
+      if (onOrderUpdated && typeof onOrderUpdated === 'function') {
+        onOrderUpdated();
+      }
     } catch (error) {
       console.error('Error updating status:', error);
     } finally {
@@ -95,6 +98,8 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
     if (value === null || value === undefined) return '0';
     return value.toLocaleString('en-IN');
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
