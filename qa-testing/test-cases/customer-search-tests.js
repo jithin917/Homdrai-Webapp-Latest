@@ -26,6 +26,7 @@ describe('Customer Search Tests', () => {
   describe('TC-CS-001: Customer Search Functionality', () => {
     test('should display all customers in dropdown initially', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const customerSelect = screen.getByDisplayValue('Select Customer');
       fireEvent.click(customerSelect);
@@ -39,6 +40,7 @@ describe('Customer Search Tests', () => {
 
     test('should filter customers by name', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const searchInput = screen.getByPlaceholderText(/search customers/i);
       fireEvent.change(searchInput, { target: { value: 'John' } });
@@ -51,6 +53,7 @@ describe('Customer Search Tests', () => {
 
     test('should filter customers by phone number', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const searchInput = screen.getByPlaceholderText(/search customers/i);
       fireEvent.change(searchInput, { target: { value: '1234' } });
@@ -63,6 +66,7 @@ describe('Customer Search Tests', () => {
 
     test('should handle empty search results gracefully', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const searchInput = screen.getByPlaceholderText(/search customers/i);
       fireEvent.change(searchInput, { target: { value: 'NonExistentCustomer' } });
@@ -76,6 +80,7 @@ describe('Customer Search Tests', () => {
   describe('TC-CS-002: Customer Selection', () => {
     test('should select customer from dropdown', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const customerSelect = screen.getByDisplayValue('Select Customer');
       fireEvent.change(customerSelect, { target: { value: 'CUST001' } });
@@ -87,6 +92,7 @@ describe('Customer Search Tests', () => {
 
     test('should display selected customer information', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const customerSelect = screen.getByDisplayValue('Select Customer');
       fireEvent.change(customerSelect, { target: { value: 'CUST001' } });
@@ -99,6 +105,7 @@ describe('Customer Search Tests', () => {
 
     test('should clear selection when customer is deselected', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const customerSelect = screen.getByDisplayValue('Select Customer');
       fireEvent.change(customerSelect, { target: { value: 'CUST001' } });
@@ -118,6 +125,7 @@ describe('Customer Search Tests', () => {
       };
       
       render(<NewOrderModal {...propsWithInvalidCustomers} />);
+      )
       
       // Should not crash and should show appropriate message
       expect(screen.getByText(/no customers available/i)).toBeInTheDocument();
@@ -130,6 +138,7 @@ describe('Customer Search Tests', () => {
       };
       
       render(<NewOrderModal {...propsWithUndefinedCustomers} />);
+      )
       
       expect(screen.getByText(/loading customers/i)).toBeInTheDocument();
     });
@@ -141,6 +150,7 @@ describe('Customer Search Tests', () => {
       };
       
       render(<NewOrderModal {...propsWithEmptyCustomers} />);
+      )
       
       expect(screen.getByText(/no customers found/i)).toBeInTheDocument();
     });
@@ -180,6 +190,7 @@ describe('Customer Search Tests', () => {
 
       const startTime = performance.now();
       render(<NewOrderModal {...propsWithLargeDataset} />);
+      )
       const endTime = performance.now();
 
       // Should render within reasonable time (less than 100ms)

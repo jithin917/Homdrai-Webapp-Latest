@@ -26,6 +26,7 @@ describe('Button Functionality Tests', () => {
   describe('TC-BF-001: Cancel Button Functionality', () => {
     test('should close modal when Cancel button is clicked', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const cancelButton = screen.getByText(/cancel/i);
       fireEvent.click(cancelButton);
@@ -37,6 +38,7 @@ describe('Button Functionality Tests', () => {
 
     test('should clear form data when Cancel is clicked', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       // Fill some form data
       const customerSelect = screen.getByDisplayValue('Select Customer');
@@ -57,6 +59,7 @@ describe('Button Functionality Tests', () => {
 
     test('should show confirmation dialog for unsaved changes', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       // Fill form with data
       const customerSelect = screen.getByDisplayValue('Select Customer');
@@ -79,6 +82,7 @@ describe('Button Functionality Tests', () => {
   describe('TC-BF-002: Close Button Functionality', () => {
     test('should close modal when X button is clicked', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const closeButton = screen.getByRole('button', { name: /close/i });
       fireEvent.click(closeButton);
@@ -90,6 +94,7 @@ describe('Button Functionality Tests', () => {
 
     test('should handle ESC key press to close modal', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
       
@@ -100,6 +105,7 @@ describe('Button Functionality Tests', () => {
 
     test('should close modal when clicking outside modal area', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const modalOverlay = screen.getByTestId('modal-overlay');
       fireEvent.click(modalOverlay);
@@ -113,6 +119,7 @@ describe('Button Functionality Tests', () => {
   describe('TC-BF-003: Submit Button Functionality', () => {
     test('should validate required fields before submission', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const submitButton = screen.getByText(/create order/i);
       fireEvent.click(submitButton);
@@ -125,6 +132,7 @@ describe('Button Functionality Tests', () => {
 
     test('should submit form with valid data', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       // Fill required fields
       const customerSelect = screen.getByDisplayValue('Select Customer');
@@ -150,6 +158,7 @@ describe('Button Functionality Tests', () => {
 
     test('should disable submit button during submission', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       // Fill required fields
       const customerSelect = screen.getByDisplayValue('Select Customer');
@@ -169,6 +178,7 @@ describe('Button Functionality Tests', () => {
   describe('TC-BF-004: Navigation Button Functionality', () => {
     test('should navigate between form sections', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       // Click on different sections
       const measurementTab = screen.getByText(/measurements/i);
@@ -188,6 +198,7 @@ describe('Button Functionality Tests', () => {
 
     test('should maintain form state when navigating between sections', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       // Fill data in first section
       const customerSelect = screen.getByDisplayValue('Select Customer');
@@ -209,6 +220,7 @@ describe('Button Functionality Tests', () => {
   describe('TC-BF-005: Button State Management', () => {
     test('should update button states based on form validity', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const submitButton = screen.getByText(/create order/i);
       
@@ -233,6 +245,7 @@ describe('Button Functionality Tests', () => {
       const propsWithSlowSubmit = { ...mockProps, onSubmit: slowOnSubmit };
       
       render(<NewOrderModal {...propsWithSlowSubmit} />);
+      )
       
       // Fill form and submit
       const customerSelect = screen.getByDisplayValue('Select Customer');

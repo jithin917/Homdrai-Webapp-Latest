@@ -27,6 +27,7 @@ describe('Measurement Form Tests', () => {
   describe('TC-MF-001: Measurement Form Accessibility', () => {
     test('should display measurement form when "Use Custom Measurements" is selected', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       // Select a customer first
       const customerSelect = screen.getByDisplayValue('Select Customer');
@@ -44,6 +45,7 @@ describe('Measurement Form Tests', () => {
 
     test('should persist measurement data when switching between form sections', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       // Navigate to measurements section
       const customerSelect = screen.getByDisplayValue('Select Customer');
@@ -71,6 +73,7 @@ describe('Measurement Form Tests', () => {
   describe('TC-MF-002: Measurement Form Validation', () => {
     test('should validate required measurement fields', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       // Setup form
       const customerSelect = screen.getByDisplayValue('Select Customer');
@@ -91,6 +94,7 @@ describe('Measurement Form Tests', () => {
 
     test('should accept valid measurement values', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       // Fill valid measurements
       const customerSelect = screen.getByDisplayValue('Select Customer');
@@ -125,6 +129,7 @@ describe('Measurement Form Tests', () => {
   describe('TC-MF-003: Measurement Form Disappearance Bug', () => {
     test('should not hide measurement form on customer change', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       // Select customer and enable custom measurements
       const customerSelect = screen.getByDisplayValue('Select Customer');
@@ -147,6 +152,7 @@ describe('Measurement Form Tests', () => {
 
     test('should maintain form state during re-renders', async () => {
       const { rerender } = render(<NewOrderModal {...mockProps} />);
+      )
       
       // Setup form
       const customerSelect = screen.getByDisplayValue('Select Customer');
@@ -161,6 +167,7 @@ describe('Measurement Form Tests', () => {
       
       // Force re-render
       rerender(<NewOrderModal {...mockProps} />);
+      )
       
       // Data should persist
       expect(screen.getByDisplayValue('42')).toBeInTheDocument();

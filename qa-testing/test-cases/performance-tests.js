@@ -21,6 +21,7 @@ describe('Performance Tests', () => {
 
       const startTime = performance.now();
       render(<NewOrderModal {...mockProps} />);
+      )
       const endTime = performance.now();
 
       expect(endTime - startTime).toBeLessThan(100); // Should render in less than 100ms
@@ -41,6 +42,7 @@ describe('Performance Tests', () => {
       };
 
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const searchInput = screen.getByPlaceholderText(/search customers/i);
       
@@ -68,11 +70,13 @@ describe('Performance Tests', () => {
       };
 
       const { unmount } = render(<NewOrderModal {...mockProps} />);
+      )
       
       // Simulate multiple open/close cycles
       for (let i = 0; i < 10; i++) {
         unmount();
         render(<NewOrderModal {...mockProps} />);
+        )
       }
       
       // Memory usage should remain stable
