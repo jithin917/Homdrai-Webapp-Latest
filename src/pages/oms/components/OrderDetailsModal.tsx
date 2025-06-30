@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, Calendar, DollarSign, User, Ruler, Printer } from 'lucide-react';
-import { orderAPI, customerAPI } from '../../../lib/oms-api';
+import { orderAPI } from '../../../lib/oms-api';
+import { customerService } from '../../../services/customer-service';
 import type { Order, Customer } from '../../../types/oms';
 import OrderSlipPrint from './OrderSlipPrint';
 
@@ -21,10 +22,8 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
   useEffect(() => {
     const fetchCustomer = async () => {
       try {
-        const response = await customerAPI.getById(order.customerId);
-        if (response.success) {
-          setCustomer(response.data);
-        }
+        const customerData = await customerService.getCustomerById(order.customerId);
+        setCustomer(customerData);
       } catch (error) {
         console.error('Error fetching customer:', error);
       } finally {
