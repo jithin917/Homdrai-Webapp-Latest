@@ -22,7 +22,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
   useEffect(() => {
     const fetchCustomer = async () => {
       try {
-        const customerData = await customerService.getCustomerById(order.customerId);
+        const customerData = await customerService.getById(order.customerId);
         setCustomer(customerData);
       } catch (error) {
         console.error('Error fetching customer:', error);
