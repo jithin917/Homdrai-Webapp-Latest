@@ -30,6 +30,7 @@ describe('New Order Modal - QA Test Suite', () => {
   describe('Modal Visibility and Basic Functionality', () => {
     test('should render modal when isOpen is true', () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       expect(screen.getByText('Create New Order')).toBeInTheDocument();
     });
 
@@ -40,6 +41,7 @@ describe('New Order Modal - QA Test Suite', () => {
 
     test('should call onClose when cancel button is clicked', () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       const cancelButton = screen.getByText('Cancel');
       fireEvent.click(cancelButton);
       expect(mockProps.onClose).toHaveBeenCalledTimes(1);
@@ -47,6 +49,7 @@ describe('New Order Modal - QA Test Suite', () => {
 
     test('should call onClose when close (X) button is clicked', () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       const closeButton = screen.getByRole('button', { name: /close/i });
       fireEvent.click(closeButton);
       expect(mockProps.onClose).toHaveBeenCalledTimes(1);
@@ -61,6 +64,7 @@ describe('New Order Modal - QA Test Suite', () => {
 
     test('should display customer search dropdown', () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       expect(screen.getByText('Select Customer')).toBeInTheDocument();
     });
 
@@ -69,6 +73,7 @@ describe('New Order Modal - QA Test Suite', () => {
       searchCustomers.mockResolvedValue(mockCustomers);
 
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const searchInput = screen.getByRole('combobox');
       fireEvent.change(searchInput, { target: { value: 'John' } });
@@ -83,6 +88,7 @@ describe('New Order Modal - QA Test Suite', () => {
       searchCustomers.mockResolvedValue([]);
 
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const searchInput = screen.getByRole('combobox');
       fireEvent.change(searchInput, { target: { value: 'NonExistentCustomer' } });
@@ -97,6 +103,7 @@ describe('New Order Modal - QA Test Suite', () => {
       searchCustomers.mockRejectedValue(new Error('API Error'));
 
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const searchInput = screen.getByRole('combobox');
       fireEvent.change(searchInput, { target: { value: 'John' } });
@@ -110,6 +117,7 @@ describe('New Order Modal - QA Test Suite', () => {
   describe('Form Validation', () => {
     test('should show validation errors for required fields', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const submitButton = screen.getByText('Create Order');
       fireEvent.click(submitButton);
@@ -122,6 +130,7 @@ describe('New Order Modal - QA Test Suite', () => {
 
     test('should validate total amount is greater than 0', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const totalAmountInput = screen.getByLabelText(/total amount/i);
       fireEvent.change(totalAmountInput, { target: { value: '0' } });
@@ -136,6 +145,7 @@ describe('New Order Modal - QA Test Suite', () => {
 
     test('should validate advance paid does not exceed total amount', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const totalAmountInput = screen.getByLabelText(/total amount/i);
       const advancePaidInput = screen.getByLabelText(/advance paid/i);
@@ -162,6 +172,7 @@ describe('New Order Modal - QA Test Suite', () => {
       getAllCustomers.mockResolvedValue(mockCustomers);
 
       render(<NewOrderModal {...mockProps} />);
+      )
       
       // Select a customer
       const customerSelect = screen.getByRole('combobox');
@@ -174,6 +185,7 @@ describe('New Order Modal - QA Test Suite', () => {
 
     test('should preserve measurement data when switching between form sections', async () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       // Fill in measurement data
       const chestInput = screen.getByLabelText(/chest/i);
@@ -202,6 +214,7 @@ describe('New Order Modal - QA Test Suite', () => {
       createOrder.mockResolvedValue({ id: 'ORDER001' });
 
       render(<NewOrderModal {...mockProps} />);
+      )
       
       // Fill in required fields
       const customerSelect = screen.getByRole('combobox');
@@ -232,6 +245,7 @@ describe('New Order Modal - QA Test Suite', () => {
       createOrder.mockRejectedValue(new Error('Order creation failed'));
 
       render(<NewOrderModal {...mockProps} />);
+      )
       
       // Fill in required fields and submit
       // ... (similar to above test)
@@ -245,6 +259,7 @@ describe('New Order Modal - QA Test Suite', () => {
   describe('Accessibility Tests', () => {
     test('should have proper ARIA labels', () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       expect(screen.getByRole('dialog')).toBeInTheDocument();
       expect(screen.getByLabelText(/customer/i)).toBeInTheDocument();
@@ -253,6 +268,7 @@ describe('New Order Modal - QA Test Suite', () => {
 
     test('should support keyboard navigation', () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const firstInput = screen.getByRole('combobox');
       firstInput.focus();
@@ -266,6 +282,7 @@ describe('New Order Modal - QA Test Suite', () => {
 
     test('should close modal on Escape key', () => {
       render(<NewOrderModal {...mockProps} />);
+      )
       
       fireEvent.keyDown(document, { key: 'Escape' });
       
@@ -276,6 +293,7 @@ describe('New Order Modal - QA Test Suite', () => {
   describe('Performance Tests', () => {
     test('should not cause memory leaks', () => {
       const { unmount } = render(<NewOrderModal {...mockProps} />);
+      )
       
       // Simulate component unmount
       unmount();
@@ -288,6 +306,7 @@ describe('New Order Modal - QA Test Suite', () => {
       const { searchCustomers } = require('../src/services/customer-service');
       
       render(<NewOrderModal {...mockProps} />);
+      )
       
       const searchInput = screen.getByRole('combobox');
       
