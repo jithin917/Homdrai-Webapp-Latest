@@ -236,4 +236,6 @@ const PartnerLogin = () => {
   );
 };
 
+// Export both as named export and default export to support both import styles
+export { PartnerLogin };
 export default PartnerLogin;
