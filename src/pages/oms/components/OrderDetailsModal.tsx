@@ -219,15 +219,15 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
                     </div>
                   </div>
                 )}
-                {customer.address.city && (
+                {customer.address?.city && (
                   <div className="md:col-span-2">
                     <p className="text-sm text-gray-500 mb-1">Address</p>
                     <div className="flex items-start">
                       <MapPin className="w-4 h-4 mr-1 text-gray-500 mt-1 flex-shrink-0" />
                       <p>
-                        {customer.address.street && `${customer.address.street}, `}
+                        {customer.address?.street && `${customer.address.street}, `}
                         {customer.address.city}, {customer.address.state}
-                        {customer.address.pinCode && ` - ${customer.address.pinCode}`}
+                        {customer.address?.pinCode && ` - ${customer.address.pinCode}`}
                       </p>
                     </div>
                   </div>
@@ -246,7 +246,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
                 <p className="text-sm text-gray-500 mb-1">Garment Type</p>
                 <p className="font-medium">{order.garmentType}</p>
               </div>
-              {order.fabricDetails.type && (
+              {order.fabricDetails?.type && (
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Fabric</p>
                   <p className="font-medium">
@@ -255,7 +255,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
                   </p>
                 </div>
               )}
-              {order.fabricDetails.quantity > 0 && (
+              {order.fabricDetails?.quantity && order.fabricDetails.quantity > 0 && (
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Fabric Quantity</p>
                   <p className="font-medium">{order.fabricDetails.quantity} {order.fabricDetails.unit}</p>
