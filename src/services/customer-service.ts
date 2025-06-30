@@ -224,3 +224,9 @@ export const customerService = {
     }
   }
 };
+
+// Export individual functions for backward compatibility
+export const createCustomer = customerService.create;
+export const getCustomerById = customerService.getById;
+export const searchCustomers = customerService.search;
+export const updateCustomer = customerService.update;
