@@ -64,7 +64,7 @@ Thumbs.db
 !src/pages/oms/OMSDashboard.tsx
 !src/pages/oms/OMSLogin.tsx
 
-# Ignore these files from being modified by Bolt
+# Ignore these files from being modified by Bolt - Store management.
 src/services/store-service.ts
 
 
