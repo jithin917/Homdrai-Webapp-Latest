@@ -425,4 +425,6 @@ const OrderTracking = () => {
   );
 };
 
+// Export both as named export and default export to support both import patterns
+export { OrderTracking };
 export default OrderTracking;
