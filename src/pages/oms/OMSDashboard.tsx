@@ -55,10 +55,15 @@ const OMSDashboard: React.FC = () => {
       ]);
       
       setStats(dashboardStats);
-      setOrders(ordersData);
-      setCustomers(customersData);
+      // Ensure orders is always an array
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
+      // Ensure customers is always an array
+      setCustomers(Array.isArray(customersData) ? customersData : []);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      // Set empty arrays on error to prevent filter errors
+      setOrders([]);
+      setCustomers([]);
     } finally {
       setLoading(false);
     }
@@ -108,15 +113,17 @@ const OMSDashboard: React.FC = () => {
     }
   };
 
-  const filteredOrders = orders.filter(order => {
+  // Ensure orders is always an array before filtering
+  const filteredOrders = Array.isArray(orders) ? orders.filter(order => {
     const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.garment_type.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     return matchesSearch && matchesStatus;
-  });
+  }) : [];
 
-  const recentOrders = orders.slice(0, 5);
+  // Ensure orders is always an array before slicing
+  const recentOrders = Array.isArray(orders) ? orders.slice(0, 5) : [];
 
   if (loading) {
     return (
@@ -488,13 +495,13 @@ const OMSDashboard: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {orders.filter(order => order.customer_id === customer.id).length}
+                          {Array.isArray(orders) ? orders.filter(order => order.customer_id === customer.id).length : 0}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {formatCurrency(
-                            orders
+                            Array.isArray(orders) ? orders
                               .filter(order => order.customer_id === customer.id)
-                              .reduce((sum, order) => sum + order.total_amount, 0)
+                              .reduce((sum, order) => sum + order.total_amount, 0) : 0
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
