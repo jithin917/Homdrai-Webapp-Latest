@@ -466,3 +466,6 @@ export const orderService = {
     }
   }
 };
+
+// Export createOrder as an alias to orderService.create for backward compatibility
+export const createOrder = orderService.create;
