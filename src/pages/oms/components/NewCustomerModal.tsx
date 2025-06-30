@@ -1,311 +1,335 @@
 import React, { useState } from 'react';
 import { X, User, Phone, Mail, MapPin } from 'lucide-react';
-import { customerAPI } from '../../../lib/oms-api';
-import type { Customer } from '../../../types/oms';
+import { Customer } from '../../../types/oms';
+import { customerService } from '../../../services/customer-service';
 
 interface NewCustomerModalProps {
+  isOpen: boolean;
   onClose: () => void;
-  onCustomerCreated: () => void;
+  onCustomerCreated: (customer: Customer) => void;
 }
 
-export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ onClose, onCustomerCreated }) => {
+export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
+  isOpen,
+  onClose,
+  onCustomerCreated
+}) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    addressStreet: '',
-    addressCity: '',
-    addressState: '',
-    addressPinCode: '',
-    addressCountry: 'India',
-    communicationEmail: true,
-    communicationSms: true,
-    communicationWhatsapp: true
+    address_street: '',
+    address_city: '',
+    address_state: '',
+    address_pin_code: '',
+    address_country: 'India',
+    communication_email: true,
+    communication_sms: true,
+    communication_whatsapp: true
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target as HTMLInputElement;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setError(null);
+    setIsSubmitting(true);
 
     try {
-      // Validate form
-      if (!formData.name || !formData.phone) {
-        throw new Error('Name and phone number are required');
+      // Validate required fields
+      if (!formData.name.trim()) {
+        throw new Error('Customer name is required');
+      }
+      if (!formData.phone.trim()) {
+        throw new Error('Phone number is required');
       }
 
-      const customerData: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'> = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        address: {
-          street: formData.addressStreet,
-          city: formData.addressCity,
-          state: formData.addressState,
-          pinCode: formData.addressPinCode,
-          country: formData.addressCountry
-        },
-        orderHistory: [],
-        communicationPreferences: {
-          email: formData.communicationEmail,
-          sms: formData.communicationSms,
-          whatsapp: formData.communicationWhatsapp
-        }
-      };
+      console.log('Submitting customer data:', formData);
 
-      const response = await customerAPI.create(customerData);
+      const newCustomer = await customerService.createCustomer(formData);
       
-      if (response.success) {
-        onCustomerCreated();
-      } else {
-        throw new Error(response.error || 'Failed to create customer');
-      }
-    } catch (err: any) {
-      setError(err.message);
+      console.log('Customer created successfully:', newCustomer);
+      
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        address_street: '',
+        address_city: '',
+        address_state: '',
+        address_pin_code: '',
+        address_country: 'India',
+        communication_email: true,
+        communication_sms: true,
+        communication_whatsapp: true
+      });
+
+      // Notify parent component
+      onCustomerCreated(newCustomer);
+      onClose();
+    } catch (err) {
+      console.error('Error creating customer:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create customer');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  const handleClose = () => {
+    setError(null);
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      address_street: '',
+      address_city: '',
+      address_state: '',
+      address_pin_code: '',
+      address_country: 'India',
+      communication_email: true,
+      communication_sms: true,
+      communication_whatsapp: true
+    });
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-900">Add New Customer</h2>
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+            <User className="w-5 h-5" />
+            Add New Customer
+          </h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
+            disabled={isSubmitting}
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <p className="text-red-800 text-sm">{error}</p>
             </div>
           )}
 
-          <div className="space-y-6">
-            {/* Basic Information */}
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      required
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter customer name"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="tel"
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      required
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="+91 98765 43210"
-                    />
-                  </div>
-                </div>
-                <div className="md:col-span-2">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="customer@example.com"
-                    />
-                  </div>
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Basic Information</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name *
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter customer name"
+                    required
+                    disabled={isSubmitting}
+                  />
                 </div>
               </div>
-            </div>
 
-            {/* Address Information */}
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Address Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2">
-                  <label htmlFor="addressStreet" className="block text-sm font-medium text-gray-700 mb-2">
-                    Street Address
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      id="addressStreet"
-                      name="addressStreet"
-                      value={formData.addressStreet}
-                      onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter street address"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="addressCity" className="block text-sm font-medium text-gray-700 mb-2">
-                    City
-                  </label>
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number *
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
-                    type="text"
-                    id="addressCity"
-                    name="addressCity"
-                    value={formData.addressCity}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter city"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="addressState" className="block text-sm font-medium text-gray-700 mb-2">
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    id="addressState"
-                    name="addressState"
-                    value={formData.addressState}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter state"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="addressPinCode" className="block text-sm font-medium text-gray-700 mb-2">
-                    PIN Code
-                  </label>
-                  <input
-                    type="text"
-                    id="addressPinCode"
-                    name="addressPinCode"
-                    value={formData.addressPinCode}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter PIN code"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="addressCountry" className="block text-sm font-medium text-gray-700 mb-2">
-                    Country
-                  </label>
-                  <input
-                    type="text"
-                    id="addressCountry"
-                    name="addressCountry"
-                    value={formData.addressCountry}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter phone number"
+                    required
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Communication Preferences */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Communication Preferences</h3>
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="communicationEmail"
-                    name="communicationEmail"
-                    checked={formData.communicationEmail}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <label htmlFor="communicationEmail" className="ml-2 block text-sm text-gray-700">
-                    Email notifications
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="communicationSms"
-                    name="communicationSms"
-                    checked={formData.communicationSms}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <label htmlFor="communicationSms" className="ml-2 block text-sm text-gray-700">
-                    SMS notifications
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="communicationWhatsapp"
-                    name="communicationWhatsapp"
-                    checked={formData.communicationWhatsapp}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <label htmlFor="communicationWhatsapp" className="ml-2 block text-sm text-gray-700">
-                    WhatsApp notifications
-                  </label>
-                </div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter email address"
+                  disabled={isSubmitting}
+                />
               </div>
             </div>
           </div>
 
+          {/* Address Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+              <MapPin className="w-5 h-5" />
+              Address Information
+            </h3>
+            
+            <div>
+              <label htmlFor="address_street" className="block text-sm font-medium text-gray-700 mb-1">
+                Street Address
+              </label>
+              <input
+                type="text"
+                id="address_street"
+                name="address_street"
+                value={formData.address_street}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter street address"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label htmlFor="address_city" className="block text-sm font-medium text-gray-700 mb-1">
+                  City
+                </label>
+                <input
+                  type="text"
+                  id="address_city"
+                  name="address_city"
+                  value={formData.address_city}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter city"
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="address_state" className="block text-sm font-medium text-gray-700 mb-1">
+                  State
+                </label>
+                <input
+                  type="text"
+                  id="address_state"
+                  name="address_state"
+                  value={formData.address_state}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter state"
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="address_pin_code" className="block text-sm font-medium text-gray-700 mb-1">
+                  PIN Code
+                </label>
+                <input
+                  type="text"
+                  id="address_pin_code"
+                  name="address_pin_code"
+                  value={formData.address_pin_code}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter PIN code"
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Communication Preferences */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Communication Preferences</h3>
+            
+            <div className="space-y-3">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="communication_email"
+                  checked={formData.communication_email}
+                  onChange={handleInputChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  disabled={isSubmitting}
+                />
+                <span className="ml-2 text-sm text-gray-700">Email notifications</span>
+              </label>
+
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="communication_sms"
+                  checked={formData.communication_sms}
+                  onChange={handleInputChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  disabled={isSubmitting}
+                />
+                <span className="ml-2 text-sm text-gray-700">SMS notifications</span>
+              </label>
+
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="communication_whatsapp"
+                  checked={formData.communication_whatsapp}
+                  onChange={handleInputChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  disabled={isSubmitting}
+                />
+                <span className="ml-2 text-sm text-gray-700">WhatsApp notifications</span>
+              </label>
+            </div>
+          </div>
+
           {/* Form Actions */}
-          <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              onClick={handleClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSubmitting}
             >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Creating...</span>
-                </>
-              ) : (
-                <span>Create Customer</span>
-              )}
+              {isSubmitting ? 'Creating...' : 'Create Customer'}
             </button>
           </div>
         </form>
