@@ -19,7 +19,8 @@ import {
   DollarSign,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  Download
 } from 'lucide-react';
 import { authAPI, dashboardAPI, orderAPI, customerAPI, storeAPI } from '../../lib/oms-api';
 import type { DashboardStats, Order, User, Customer, Store } from '../../types/oms';
