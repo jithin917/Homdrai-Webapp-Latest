@@ -18,7 +18,7 @@ export interface Store {
 }
 
 class StoreService {
-  async getAllStores(): Promise<Store[]> {
+  async getAll(): Promise<Store[]> {
     const { data, error } = await supabase
       .from('oms_stores')
       .select('*')
@@ -30,6 +30,10 @@ class StoreService {
     }
 
     return data || [];
+  }
+
+  async getAllStores(): Promise<Store[]> {
+    return this.getAll();
   }
 
   async getActiveStores(): Promise<Store[]> {
