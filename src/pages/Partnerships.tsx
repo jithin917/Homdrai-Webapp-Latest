@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Building2, Handshake, CheckCircle, Send } from 'lucide-react';
 import { api } from '../lib/supabase';
 
-const Partnerships = () => {
+export const Partnerships = () => {
   const [activeTab, setActiveTab] = useState('bulk-orders');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -717,5 +717,3 @@ const Partnerships = () => {
     </div>
   );
 };
-
-export default Partnerships;
