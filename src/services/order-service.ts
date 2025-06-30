@@ -233,3 +233,6 @@ export const orderService = {
 
 // Export standalone function for backward compatibility
 export const createOrder = orderService.create;
+
+// Default export for compatibility
+export default orderService;
