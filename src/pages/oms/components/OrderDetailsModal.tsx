@@ -65,7 +65,8 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
     }));
   };
 
-  const formatDate = (date: Date | string) => {
+  const formatDate = (date: Date | string | null | undefined) => {
+    if (!date) return 'N/A';
     return new Date(date).toLocaleDateString('en-IN', {
       year: 'numeric',
       month: 'long',
@@ -73,12 +74,18 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
     });
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | null | undefined) => {
+    if (amount === null || amount === undefined) return '₹0';
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
       minimumFractionDigits: 0
     }).format(amount);
+  };
+
+  const safeToLocaleString = (value: number | null | undefined) => {
+    if (value === null || value === undefined) return '0';
+    return value.toLocaleString('en-IN');
   };
 
   return (
@@ -108,15 +115,15 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Type:</span>
-                  <span className="font-medium capitalize">{order.type.replace('_', ' ')}</span>
+                  <span className="font-medium capitalize">{order.type?.replace('_', ' ') || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status:</span>
-                  <span className="font-medium capitalize">{order.status.replace('_', ' ')}</span>
+                  <span className="font-medium capitalize">{order.status?.replace('_', ' ') || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Priority:</span>
-                  <span className="font-medium capitalize">{order.priority}</span>
+                  <span className="font-medium capitalize">{order.priority || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Created:</span>
@@ -133,15 +140,15 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Amount:</span>
-                  <span className="font-medium">₹{order.totalAmount.toLocaleString('en-IN')}</span>
+                  <span className="font-medium">₹{safeToLocaleString(order.totalAmount)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Advance Paid:</span>
-                  <span className="font-medium">₹{order.advancePaid.toLocaleString('en-IN')}</span>
+                  <span className="font-medium">₹{safeToLocaleString(order.advancePaid)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Balance Due:</span>
-                  <span className="font-medium">₹{order.balanceAmount.toLocaleString('en-IN')}</span>
+                  <span className="font-medium">₹{safeToLocaleString(order.balanceAmount)}</span>
                 </div>
                 {order.advancePaidDate && (
                   <div className="flex justify-between">
@@ -244,7 +251,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <p className="text-sm text-gray-500 mb-1">Garment Type</p>
-                <p className="font-medium">{order.garmentType}</p>
+                <p className="font-medium">{order.garmentType || 'N/A'}</p>
               </div>
               {order.fabricDetails?.type && (
                 <div>
@@ -281,16 +288,16 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <h3 className="font-medium text-gray-900 capitalize">
-                          {history.status.replace('_', ' ')}
+                          {history.status?.replace('_', ' ') || 'N/A'}
                         </h3>
                         <span className="text-sm text-gray-500">
-                          {new Date(history.timestamp).toLocaleString('en-IN')}
+                          {history.timestamp ? new Date(history.timestamp).toLocaleString('en-IN') : 'N/A'}
                         </span>
                       </div>
                       {history.notes && (
                         <p className="text-gray-600 mt-1">{history.notes}</p>
                       )}
-                      <p className="text-sm text-gray-500 mt-1">Updated by: {history.updatedBy}</p>
+                      <p className="text-sm text-gray-500 mt-1">Updated by: {history.updatedBy || 'N/A'}</p>
                     </div>
                   </div>
                 ))}
