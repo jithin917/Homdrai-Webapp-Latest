@@ -11,7 +11,7 @@ interface NewOrderModalProps {
   onOrderCreated: () => void;
 }
 
-export function NewOrderModal({ isOpen, onClose, onOrderCreated }: NewOrderModalProps) {
+function NewOrderModal({ isOpen, onClose, onOrderCreated }: NewOrderModalProps) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -374,3 +374,5 @@ export function NewOrderModal({ isOpen, onClose, onOrderCreated }: NewOrderModal
     </>
   );
 }
+
+export default NewOrderModal;
