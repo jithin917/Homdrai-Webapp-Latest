@@ -712,4 +712,6 @@ const NewOrderModal: React.FC<NewOrderModalProps> = ({
   );
 };
 
+// Export both named and default exports for compatibility
+export { NewOrderModal };
 export default NewOrderModal;
