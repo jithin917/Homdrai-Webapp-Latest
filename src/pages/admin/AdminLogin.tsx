@@ -100,4 +100,6 @@ const AdminLogin = () => {
   );
 };
 
+// Export both default and named export to support both import styles
 export default AdminLogin;
+export { AdminLogin };
