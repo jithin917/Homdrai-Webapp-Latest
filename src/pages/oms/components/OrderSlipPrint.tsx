@@ -7,7 +7,7 @@ interface OrderSlipPrintProps {
   onClose: () => void;
 }
 
-const OrderSlipPrint: React.FC<OrderSlipPrintProps> = ({ order, customer, onClose }) => {
+export const OrderSlipPrint: React.FC<OrderSlipPrintProps> = ({ order, customer, onClose }) => {
   const formatDate = (date: Date | string | undefined) => {
     if (!date) return '';
     return new Date(date).toLocaleDateString('en-IN');
@@ -207,5 +207,3 @@ const OrderSlipPrint: React.FC<OrderSlipPrintProps> = ({ order, customer, onClos
     </div>
   );
 };
-
-export default OrderSlipPrint;
