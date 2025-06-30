@@ -143,3 +143,11 @@ export const measurementsService = {
     }
   }
 };
+
+/**
+ * Gets measurements by customer ID (alias for backward compatibility)
+ * 
+ * @param customerId - The customer ID
+ * @returns API response with the customer's measurements
+ */
+export const getMeasurementsByCustomerId = measurementsService.getByCustomerId;
