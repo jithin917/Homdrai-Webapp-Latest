@@ -1,22 +1,130 @@
-#Files currspond to OMS Module - ALl the modules are currently ignored
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+.pnp/
+.pnp.js
 
-/orders/**/*
-/checkout/**/*
-/payment-processing/**/*
-/inventory/**/*
-/shipping/**/*
-/order-tracking/**/*
-/order-history/**/*
-/invoice-generation/**/*
-/order-status/**/*
-/order-notifications/**/*
-/order-validation/**/*
-/refund-processing/**/*
-/order-api/**/*
-/order-models/**/*
-/order-migrations/**/*
-/order-config/**/*
-/order-services/**/*
-/order-controllers/**/*
-/order-middleware/**/*
-/order-tests/**/*
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+.output/
+.cache/
+public/dist/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# IDE and editor files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Testing and coverage
+coverage/
+.nyc_output/
+.jest/
+__tests__/
+__mocks__/
+*.test.js
+*.spec.js
+test-results/
+
+# Logs and debugging
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+debug.log
+.debug/
+
+# Temporary files
+tmp/
+temp/
+.temp/
+*.tmp
+*.bak
+*.swp
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.yarn/
+.yarnrc
+.npmrc
+
+# Large media files
+*.mp4
+*.tiff
+*.avi
+*.flv
+*.mov
+*.wmv
+*.mp3
+*.wav
+*.flac
+
+# Compiled binaries
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Archives
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Bolt-specific files
+.bolt/cache/
+.bolt/tmp/
+.bolt/logs/
+
+# Supabase
+.supabase/local/
+
+# Miscellaneous
+.git/
+.github/
+.gitlab/
+.circleci/
+.travis.yml
+.dockerignore
+Dockerfile
+docker-compose.yml
