@@ -73,7 +73,7 @@ src/pages/admin/**
 src/pages/partner/**
 src/pages/AIStylistChat.tsx
 src/pages/Auth.tsx
-src/pages/Contact.tsx
+# src/pages/Contact.tsx
 src/pages/DressDesigner.tsx
 src/pages/Home.tsx
 src/pages/Partnerships.tsx
