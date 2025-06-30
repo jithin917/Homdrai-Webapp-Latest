@@ -12,7 +12,7 @@ import { Partnerships } from './pages/Partnerships';
 import { DressDesigner } from './pages/DressDesigner';
 import { AIStylistChat } from './pages/AIStylistChat';
 import { SavedDesigns } from './pages/SavedDesigns';
-import { Auth } from './pages/Auth';
+import Auth from './pages/Auth';
 import { OrderTracking } from './pages/oms/OrderTracking';
 import { OMSLogin } from './pages/oms/OMSLogin';
 import { OMSDashboard } from './pages/oms/OMSDashboard';
