@@ -76,3 +76,7 @@ src/pages/Partnerships.tsx
 src/pages/SavedDesigns.tsx
 src/pages/ServiceDetail.tsx
 src/pages/Services.tsx
+
+
+# Ignore these files from being modified by Bolt
+src/services/store-service.ts
