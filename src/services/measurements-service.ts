@@ -1,161 +1,186 @@
 import { supabase } from '../lib/supabase';
-import { CustomerMeasurements } from '../types/oms';
-import { ApiResponse } from '../types/oms-api';
 
-/**
- * Customer measurements service
- */
+export interface CustomerMeasurements {
+  id: string;
+  customer_id: string;
+  unit: 'cm' | 'inches';
+  top_fl?: number;
+  top_sh?: number;
+  top_sl?: number;
+  top_sr?: number;
+  top_mr?: number;
+  top_ah?: number;
+  top_ch?: number;
+  top_br?: number;
+  top_wr?: number;
+  top_hip?: number;
+  top_slit?: number;
+  top_fn?: number;
+  top_bn?: number;
+  top_dp?: number;
+  top_pp?: number;
+  bottom_fl?: number;
+  bottom_wr?: number;
+  bottom_sr?: number;
+  bottom_tr?: number;
+  bottom_lr?: number;
+  bottom_ar?: number;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface OrderMeasurements {
+  id: string;
+  order_id: string;
+  unit: 'cm' | 'inches';
+  top_fl?: number;
+  top_sh?: number;
+  top_sl?: number;
+  top_sr?: number;
+  top_mr?: number;
+  top_ah?: number;
+  top_ch?: number;
+  top_br?: number;
+  top_wr?: number;
+  top_hip?: number;
+  top_slit?: number;
+  top_fn?: number;
+  top_bn?: number;
+  top_dp?: number;
+  top_pp?: number;
+  bottom_fl?: number;
+  bottom_wr?: number;
+  bottom_sr?: number;
+  bottom_tr?: number;
+  bottom_lr?: number;
+  bottom_ar?: number;
+  custom_measurements?: any;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export const measurementsService = {
-  /**
-   * Creates new customer measurements
-   * 
-   * @param measurementData - The measurement data
-   * @returns API response with the created measurements
-   */
-  create: async (measurementData: Omit<CustomerMeasurements, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<CustomerMeasurements>> => {
-    try {
-      const { data, error } = await supabase
-        .from('oms_customer_measurements')
-        .insert([{
-          customer_id: measurementData.customerId,
-          unit: measurementData.unit,
-          top_fl: measurementData.top.FL,
-          top_sh: measurementData.top.SH,
-          top_sl: measurementData.top.SL,
-          top_sr: measurementData.top.SR,
-          top_mr: measurementData.top.MR,
-          top_ah: measurementData.top.AH,
-          top_ch: measurementData.top.CH,
-          top_br: measurementData.top.BR,
-          top_wr: measurementData.top.WR,
-          top_hip: measurementData.top.HIP,
-          top_slit: measurementData.top.SLIT,
-          top_fn: measurementData.top.FN,
-          top_bn: measurementData.top.BN,
-          top_dp: measurementData.top.DP,
-          top_pp: measurementData.top.PP,
-          bottom_fl: measurementData.bottom?.FL,
-          bottom_wr: measurementData.bottom?.WR,
-          bottom_sr: measurementData.bottom?.SR,
-          bottom_tr: measurementData.bottom?.TR,
-          bottom_lr: measurementData.bottom?.LR,
-          bottom_ar: measurementData.bottom?.AR,
-          notes: measurementData.notes
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const measurements: CustomerMeasurements = {
-        id: data.id,
-        customerId: data.customer_id,
-        unit: data.unit,
-        top: {
-          FL: data.top_fl,
-          SH: data.top_sh,
-          SL: data.top_sl,
-          SR: data.top_sr,
-          MR: data.top_mr,
-          AH: data.top_ah,
-          CH: data.top_ch,
-          BR: data.top_br,
-          WR: data.top_wr,
-          HIP: data.top_hip,
-          SLIT: data.top_slit,
-          FN: data.top_fn,
-          BN: data.top_bn,
-          DP: data.top_dp,
-          PP: data.top_pp
-        },
-        bottom: data.bottom_fl ? {
-          FL: data.bottom_fl,
-          WR: data.bottom_wr,
-          SR: data.bottom_sr,
-          TR: data.bottom_tr,
-          LR: data.bottom_lr,
-          AR: data.bottom_ar
-        } : undefined,
-        notes: data.notes,
-        createdAt: new Date(data.created_at),
-        updatedAt: new Date(data.updated_at)
-      };
-
-      return { success: true, data: measurements };
-    } catch (error: any) {
-      return { success: false, error: error.message || 'Failed to create measurements' };
-    }
-  },
-
-  /**
-   * Gets measurements by customer ID
-   * 
-   * @param customerId - The customer ID
-   * @returns API response with the customer's measurements
-   */
-  getByCustomerId: async (customerId: string): Promise<ApiResponse<CustomerMeasurements[]>> => {
+  // Customer measurements
+  async getByCustomerId(customerId: string): Promise<CustomerMeasurements | null> {
     try {
       const { data, error } = await supabase
         .from('oms_customer_measurements')
         .select('*')
         .eq('customer_id', customerId)
-        .order('created_at', { ascending: false });
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching customer measurements:', error);
+        return null;
+      }
 
-      const measurements: CustomerMeasurements[] = data.map(item => ({
-        id: item.id,
-        customerId: item.customer_id,
-        unit: item.unit,
-        top: {
-          FL: item.top_fl,
-          SH: item.top_sh,
-          SL: item.top_sl,
-          SR: item.top_sr,
-          MR: item.top_mr,
-          AH: item.top_ah,
-          CH: item.top_ch,
-          BR: item.top_br,
-          WR: item.top_wr,
-          HIP: item.top_hip,
-          SLIT: item.top_slit,
-          FN: item.top_fn,
-          BN: item.top_bn,
-          DP: item.top_dp,
-          PP: item.top_pp
-        },
-        bottom: item.bottom_fl ? {
-          FL: item.bottom_fl,
-          WR: item.bottom_wr,
-          SR: item.bottom_sr,
-          TR: item.bottom_tr,
-          LR: item.bottom_lr,
-          AR: item.bottom_ar
-        } : undefined,
-        notes: item.notes,
-        createdAt: new Date(item.created_at),
-        updatedAt: new Date(item.updated_at)
-      }));
+      return data;
+    } catch (error) {
+      console.error('Error in getByCustomerId:', error);
+      return null;
+    }
+  },
 
-      return { success: true, data: measurements };
-    } catch (error: any) {
-      return { success: false, error: error.message || 'Failed to fetch measurements' };
+  async createCustomerMeasurements(measurements: Omit<CustomerMeasurements, 'id' | 'created_at' | 'updated_at'>): Promise<CustomerMeasurements> {
+    const { data, error } = await supabase
+      .from('oms_customer_measurements')
+      .insert(measurements)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create customer measurements: ${error.message}`);
+    }
+
+    return data;
+  },
+
+  async updateCustomerMeasurements(id: string, measurements: Partial<CustomerMeasurements>): Promise<CustomerMeasurements> {
+    const { data, error } = await supabase
+      .from('oms_customer_measurements')
+      .update(measurements)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update customer measurements: ${error.message}`);
+    }
+
+    return data;
+  },
+
+  // Order measurements
+  async getByOrderId(orderId: string): Promise<OrderMeasurements | null> {
+    try {
+      const { data, error } = await supabase
+        .from('order_measurements')
+        .select('*')
+        .eq('order_id', orderId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching order measurements:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getByOrderId:', error);
+      return null;
+    }
+  },
+
+  async createOrderMeasurements(measurements: Omit<OrderMeasurements, 'id' | 'created_at' | 'updated_at'>): Promise<OrderMeasurements> {
+    const { data, error } = await supabase
+      .from('order_measurements')
+      .insert(measurements)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create order measurements: ${error.message}`);
+    }
+
+    return data;
+  },
+
+  async updateOrderMeasurements(id: string, measurements: Partial<OrderMeasurements>): Promise<OrderMeasurements> {
+    const { data, error } = await supabase
+      .from('order_measurements')
+      .update(measurements)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update order measurements: ${error.message}`);
+    }
+
+    return data;
+  },
+
+  async deleteCustomerMeasurements(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('oms_customer_measurements')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete customer measurements: ${error.message}`);
+    }
+  },
+
+  async deleteOrderMeasurements(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('order_measurements')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete order measurements: ${error.message}`);
     }
   }
 };
-
-/**
- * Gets measurements by customer ID (alias for backward compatibility)
- * 
- * @param customerId - The customer ID
- * @returns API response with the customer's measurements
- */
-export const getMeasurementsByCustomerId = measurementsService.getByCustomerId;
-
-/**
- * Saves customer measurements (alias for create method)
- * 
- * @param measurementData - The measurement data
- * @returns API response with the created measurements
- */
-export const saveMeasurements = measurementsService.create;
