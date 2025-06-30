@@ -1,24 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Calendar, Users, Package, TrendingUp, Clock, AlertCircle } from 'lucide-react';
-import { orderService } from '../../services/order-service';
-import { customerService } from '../../services/customer-service';
-import { storeService } from '../../services/store-service';
-import { dashboardService } from '../../services/dashboard-service';
-import { Order, Customer, Store, DashboardStats } from '../../types/oms';
-import NewOrderModal from './components/NewOrderModal';
-import OrderDetailsModal from './components/OrderDetailsModal';
+import React, { useState, useEffect } from "react";
+import { Plus, Search, Filter, Users, Package, TrendingUp, Clock, AlertCircle } from "lucide-react";
+import { orderService } from "../../services/order-service";
+import { customerService } from "../../services/customer-service";
+import { storeService } from "../../services/store-service";
+import { dashboardService } from "../../services/dashboard-service";
+import { Order, Customer, Store } from "../../types/oms";
+import NewOrderModal from "./components/NewOrderModal";
+import NewCustomerModal from "./components/NewCustomerModal";
+import OrderDetailsModal from "./components/OrderDetailsModal";
 
-const OMSDashboard: React.FC = () => {
+export default function OMSDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
+  const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     loadDashboardData();
@@ -28,103 +29,60 @@ const OMSDashboard: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-
-      const [ordersData, customersData, storesData, statsData] = await Promise.all([
+      
+      const [ordersData, customersData, storesData] = await Promise.all([
         orderService.getAll(),
         customerService.getAll(),
-        storeService.getAll(),
-        dashboardService.getStats()
+        storeService.getAll()
       ]);
 
-      setOrders(Array.isArray(ordersData) ? ordersData : []);
-      setCustomers(Array.isArray(customersData) ? customersData : []);
-      setStores(Array.isArray(storesData) ? storesData : []);
-      setStats(statsData);
+      setOrders(ordersData || []);
+      setCustomers(customersData || []);
+      setStores(storesData || []);
     } catch (err) {
       console.error('Error loading dashboard data:', err);
-      setError('Failed to load dashboard data');
-      // Ensure arrays remain as arrays even on error
-      setOrders([]);
-      setCustomers([]);
-      setStores([]);
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
   };
 
   const handleOrderCreated = (newOrder: Order) => {
-    setOrders(prev => Array.isArray(prev) ? [newOrder, ...prev] : [newOrder]);
+    setOrders(prev => [newOrder, ...prev]);
     setShowNewOrderModal(false);
-    loadDashboardData(); // Refresh stats
+  };
+
+  const handleCustomerCreated = (newCustomer: Customer) => {
+    setCustomers(prev => [newCustomer, ...prev]);
+    setShowNewCustomerModal(false);
   };
 
   const handleOrderUpdated = (updatedOrder: Order) => {
-    setOrders(prev => Array.isArray(prev) ? prev.map(order => 
+    setOrders(prev => prev.map(order => 
       order.id === updatedOrder.id ? updatedOrder : order
-    ) : [updatedOrder]);
-    setSelectedOrder(null);
-    loadDashboardData(); // Refresh stats
+    ));
+    setSelectedOrder(updatedOrder);
   };
 
-  const getCustomerName = (customerId: string): string => {
-    const customer = customers.find(c => c.id === customerId);
-    return customer?.name || 'Unknown Customer';
-  };
-
-  const getStoreName = (storeId: string): string => {
-    const store = stores.find(s => s.id === storeId);
-    return store?.name || 'Unknown Store';
-  };
-
-  const filteredOrders = (Array.isArray(orders) ? orders : []).filter(order => {
-    const matchesSearch = 
+  // Add safety check for orders array
+  const filteredOrders = (orders || []).filter(order => {
+    const matchesSearch = !searchTerm || 
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getCustomerName(order.customerId).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.garmentType.toLowerCase().includes(searchTerm.toLowerCase());
+      order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.garment_type?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusColor = (status: string) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      confirmed: 'bg-blue-100 text-blue-800',
-      in_progress: 'bg-purple-100 text-purple-800',
-      fitting_scheduled: 'bg-indigo-100 text-indigo-800',
-      ready: 'bg-green-100 text-green-800',
-      delivered: 'bg-gray-100 text-gray-800',
-      cancelled: 'bg-red-100 text-red-800'
-    };
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
-  };
+  const recentOrders = filteredOrders.slice(0, 5);
 
-  const getPriorityColor = (priority: string) => {
-    const colors = {
-      low: 'text-green-600',
-      medium: 'text-yellow-600',
-      high: 'text-orange-600',
-      urgent: 'text-red-600'
-    };
-    return colors[priority as keyof typeof colors] || 'text-gray-600';
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
+  // Dashboard stats
+  const totalOrders = orders.length;
+  const pendingOrders = orders.filter(o => o.status === 'pending').length;
+  const completedOrders = orders.filter(o => o.status === 'delivered').length;
+  const totalRevenue = orders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
 
   if (loading) {
     return (
@@ -142,12 +100,13 @@ const OMSDashboard: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <p className="text-red-600 mb-4">{error}</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Dashboard</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={loadDashboardData}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
           >
-            Retry
+            Try Again
           </button>
         </div>
       </div>
@@ -160,108 +119,109 @@ const OMSDashboard: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Order Management Dashboard</h1>
-          <p className="mt-2 text-gray-600">Manage your tailoring orders and track progress</p>
+          <p className="text-gray-600 mt-2">Manage your tailoring orders and customers</p>
         </div>
 
         {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Package className="h-6 w-6 text-blue-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalOrders}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-green-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Revenue</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Clock className="h-6 w-6 text-yellow-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Pending Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.pendingOrders}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Users className="h-6 w-6 text-purple-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Customers</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalCustomers}</p>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <Package className="h-8 w-8 text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Orders</p>
+                <p className="text-2xl font-bold text-gray-900">{totalOrders}</p>
               </div>
             </div>
           </div>
-        )}
 
-        {/* Actions and Filters */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <input
-                    type="text"
-                    placeholder="Search orders..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                
-                <div className="relative">
-                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="confirmed">Confirmed</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="fitting_scheduled">Fitting Scheduled</option>
-                    <option value="ready">Ready</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <Clock className="h-8 w-8 text-yellow-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Pending Orders</p>
+                <p className="text-2xl font-bold text-gray-900">{pendingOrders}</p>
               </div>
+            </div>
+          </div>
 
-              <button
-                onClick={() => setShowNewOrderModal(true)}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <TrendingUp className="h-8 w-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Completed</p>
+                <p className="text-2xl font-bold text-gray-900">{completedOrders}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <Users className="h-8 w-8 text-purple-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                <p className="text-2xl font-bold text-gray-900">₹{totalRevenue.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-4 mb-8">
+          <button
+            onClick={() => setShowNewOrderModal(true)}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+          >
+            <Plus className="h-5 w-5" />
+            New Order
+          </button>
+          <button
+            onClick={() => setShowNewCustomerModal(true)}
+            className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 flex items-center gap-2"
+          >
+            <Users className="h-5 w-5" />
+            New Customer
+          </button>
+        </div>
+
+        {/* Search and Filter */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <input
+                  type="text"
+                  placeholder="Search orders by ID, customer name, or garment type..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+            <div className="sm:w-48">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                New Order
-              </button>
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="in_progress">In Progress</option>
+                <option value="fitting_scheduled">Fitting Scheduled</option>
+                <option value="ready">Ready</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
             </div>
           </div>
+        </div>
 
-          {/* Orders Table */}
+        {/* Recent Orders */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Recent Orders</h2>
+          </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -276,71 +236,67 @@ const OMSDashboard: React.FC = () => {
                     Garment
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Priority
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount Paid
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Expected Delivery
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Store
+                    Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredOrders.map((order) => (
-                  <tr
-                    key={order.id}
-                    onClick={() => setSelectedOrder(order)}
-                    className="hover:bg-gray-50 cursor-pointer"
-                  >
+                {recentOrders.map((order) => (
+                  <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {order.id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {getCustomerName(order.customerId)}
+                      {order.customer_name || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.garmentType}
+                      {order.garment_type}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      ₹{order.total_amount?.toLocaleString() || '0'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                        {order.status.replace('_', ' ')}
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                        order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        order.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                        order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {order.status?.replace('_', ' ').toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`font-medium ${getPriorityColor(order.priority)}`}>
-                        {order.priority}
-                      </span>
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(order.advancePaid || 0)}
+                      {order.expected_delivery_date ? 
+                        new Date(order.expected_delivery_date).toLocaleDateString() : 
+                        'Not set'
+                      }
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.expectedDeliveryDate ? formatDate(order.expectedDeliveryDate) : 'Not set'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {getStoreName(order.storeId || '')}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => setSelectedOrder(order)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        View Details
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-
-            {filteredOrders.length === 0 && (
-              <div className="text-center py-12">
+            {recentOrders.length === 0 && (
+              <div className="text-center py-8">
                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">No orders found</p>
-                {searchTerm && (
-                  <p className="text-sm text-gray-400 mt-2">
-                    Try adjusting your search criteria
-                  </p>
-                )}
               </div>
             )}
           </div>
@@ -352,6 +308,15 @@ const OMSDashboard: React.FC = () => {
         <NewOrderModal
           onClose={() => setShowNewOrderModal(false)}
           onOrderCreated={handleOrderCreated}
+          customers={customers}
+          stores={stores}
+        />
+      )}
+
+      {showNewCustomerModal && (
+        <NewCustomerModal
+          onClose={() => setShowNewCustomerModal(false)}
+          onCustomerCreated={handleCustomerCreated}
         />
       )}
 
@@ -360,10 +325,10 @@ const OMSDashboard: React.FC = () => {
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
           onOrderUpdated={handleOrderUpdated}
+          customers={customers}
+          stores={stores}
         />
       )}
     </div>
   );
-};
-
-export default OMSDashboard;
+}
