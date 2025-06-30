@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import { ArrowRight, CheckCircle, Clock, Star, Users } from 'lucide-react';
 
-const ServiceDetail = () => {
+export const ServiceDetail = () => {
   const { serviceName } = useParams();
 
   const serviceData: Record<string, any> = {
@@ -315,5 +315,3 @@ const ServiceDetail = () => {
     </div>
   );
 };
-
-export default ServiceDetail;
