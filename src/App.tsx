@@ -5,7 +5,7 @@ import { Footer } from './components/Footer';
 import { WhatsAppButton } from './components/WhatsAppButton';
 import Home from './pages/Home';
 import { About } from './pages/About';
-import { Services } from './pages/Services';
+import Services from './pages/Services';
 import { ServiceDetail } from './pages/ServiceDetail';
 import { Contact } from './pages/Contact';
 import { Partnerships } from './pages/Partnerships';
