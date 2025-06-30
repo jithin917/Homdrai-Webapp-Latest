@@ -1,7 +1,7 @@
 import React from 'react';
 import { MapPin, Phone, Mail, Clock, MessageCircle } from 'lucide-react';
 
-const Contact = () => {
+export const Contact = () => {
   const handleWhatsAppClick = () => {
     const phoneNumber = '+919567199924';
     const message = encodeURIComponent("Hi Homdrai, I'd like to get in touch with you regarding your services.");
