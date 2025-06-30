@@ -151,3 +151,11 @@ export const measurementsService = {
  * @returns API response with the customer's measurements
  */
 export const getMeasurementsByCustomerId = measurementsService.getByCustomerId;
+
+/**
+ * Saves customer measurements (alias for create method)
+ * 
+ * @param measurementData - The measurement data
+ * @returns API response with the created measurements
+ */
+export const saveMeasurements = measurementsService.create;
