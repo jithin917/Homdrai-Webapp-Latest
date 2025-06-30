@@ -138,3 +138,6 @@ export const customerService = {
     }
   }
 };
+
+// Export standalone function for backward compatibility
+export const createCustomer = customerService.create;
