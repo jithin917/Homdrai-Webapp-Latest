@@ -237,6 +237,7 @@ export async function updateCustomerMeasurements(
 
 // Export customerService object containing all functions
 export const customerService = {
+  getAll: getCustomers, // Add getAll method that maps to getCustomers
   getCustomers,
   createCustomer,
   updateCustomer,
