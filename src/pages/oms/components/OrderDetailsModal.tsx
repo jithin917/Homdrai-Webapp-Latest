@@ -22,7 +22,15 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
   useEffect(() => {
     const fetchCustomer = async () => {
       try {
-        const customerData = await customerService.getById(order.customerId);
+        // Check if customer_id exists before making the API call
+        const customerId = order.customer_id || order.customerId;
+        if (!customerId) {
+          console.warn('No customer ID found for order:', order.id);
+          setLoading(false);
+          return;
+        }
+
+        const customerData = await customerService.getById(customerId);
         setCustomer(customerData);
       } catch (error) {
         console.error('Error fetching customer:', error);
@@ -32,7 +40,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
     };
 
     fetchCustomer();
-  }, [order.customerId]);
+  }, [order.customer_id, order.customerId]);
 
   const handleStatusUpdate = async () => {
     setStatusUpdateLoading(true);
@@ -241,7 +249,14 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, o
                 )}
               </div>
             ) : (
-              <p className="text-gray-500">Customer information not available</p>
+              <div className="text-center py-4">
+                <p className="text-gray-500">
+                  {!order.customer_id && !order.customerId 
+                    ? 'No customer ID associated with this order' 
+                    : 'Customer information not available'
+                  }
+                </p>
+              </div>
             )}
           </div>
 
