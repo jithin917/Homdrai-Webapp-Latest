@@ -1,91 +1,69 @@
 import { supabase } from '../lib/supabase';
-import type { Store } from '../types/oms';
 
-export const storeService = {
-  async getAll(): Promise<Store[]> {
+export interface Store {
+  id: string;
+  code: string;
+  name: string;
+  address_street: string;
+  address_city: string;
+  address_state: string;
+  address_pin_code: string;
+  address_country: string;
+  phone: string;
+  email: string;
+  manager_id?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+class StoreService {
+  async getAllStores(): Promise<Store[]> {
     const { data, error } = await supabase
       .from('oms_stores')
-      .select(`
-        *,
-        manager:oms_users!fk_stores_manager(id, username, email)
-      `)
-      .order('created_at', { ascending: false });
+      .select('*')
+      .order('name');
 
     if (error) {
       console.error('Error fetching stores:', error);
-      throw new Error(`Failed to fetch stores: ${error.message}`);
+      throw new Error('Failed to fetch stores');
     }
 
     return data || [];
-  },
+  }
 
-  async getById(id: string): Promise<Store | null> {
+  async getActiveStores(): Promise<Store[]> {
     const { data, error } = await supabase
       .from('oms_stores')
-      .select(`
-        *,
-        manager:oms_users!fk_stores_manager(id, username, email)
-      `)
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching active stores:', error);
+      throw new Error('Failed to fetch active stores');
+    }
+
+    return data || [];
+  }
+
+  async getStoreById(id: string): Promise<Store | null> {
+    const { data, error } = await supabase
+      .from('oms_stores')
+      .select('*')
       .eq('id', id)
       .single();
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return null; // Store not found
+        return null;
       }
       console.error('Error fetching store:', error);
-      throw new Error(`Failed to fetch store: ${error.message}`);
+      throw new Error('Failed to fetch store');
     }
 
     return data;
-  },
-
-  async create(store: Omit<Store, 'id' | 'created_at' | 'updated_at'>): Promise<Store> {
-    const { data, error } = await supabase
-      .from('oms_stores')
-      .insert(store)
-      .select(`
-        *,
-        manager:oms_users!fk_stores_manager(id, username, email)
-      `)
-      .single();
-
-    if (error) {
-      console.error('Error creating store:', error);
-      throw new Error(`Failed to create store: ${error.message}`);
-    }
-
-    return data;
-  },
-
-  async update(id: string, updates: Partial<Store>): Promise<Store> {
-    const { data, error } = await supabase
-      .from('oms_stores')
-      .update(updates)
-      .eq('id', id)
-      .select(`
-        *,
-        manager:oms_users!fk_stores_manager(id, username, email)
-      `)
-      .single();
-
-    if (error) {
-      console.error('Error updating store:', error);
-      throw new Error(`Failed to update store: ${error.message}`);
-    }
-
-    return data;
-  },
-
-  async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('oms_stores')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error deleting store:', error);
-      throw new Error(`Failed to delete store: ${error.message}`);
-    }
   }
-};
+}
+
+export const storeService = new StoreService();
