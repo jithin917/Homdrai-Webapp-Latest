@@ -66,6 +66,8 @@ Thumbs.db
 
 # Ignore these files from being modified by Bolt
 src/services/store-service.ts
+
+
 # Ignore everything else in these directories
 src/pages/admin/**
 src/pages/partner/**
