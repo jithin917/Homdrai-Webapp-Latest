@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { api, type PartnerDocument } from '../../lib/supabase';
 
-const PartnerDashboard = () => {
+export const PartnerDashboard = () => {
   const [partner, setPartner] = useState<any>(null);
   const [documents, setDocuments] = useState<PartnerDocument[]>([]);
   const [loading, setLoading] = useState(true);
