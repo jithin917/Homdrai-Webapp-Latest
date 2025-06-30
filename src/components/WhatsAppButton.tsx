@@ -24,4 +24,6 @@ const WhatsAppButton = () => {
   );
 };
 
+// Export both as named export and default export for compatibility
+export { WhatsAppButton };
 export default WhatsAppButton;
