@@ -40,7 +40,7 @@ interface GeneratedDesign {
   status: 'pending' | 'generating' | 'completed' | 'failed';
 }
 
-const DressDesigner = () => {
+export const DressDesigner = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [designConfig, setDesignConfig] = useState<DesignConfig>({
     basicDetails: {
