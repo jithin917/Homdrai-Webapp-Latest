@@ -218,6 +218,104 @@ export const orderService = {
   },
 
   /**
+   * Gets all orders with optional filtering
+   * 
+   * @param filters - Optional filters to apply
+   * @returns Paginated response with orders
+   */
+  getAll: async (filters?: Partial<SearchFilters>): Promise<PaginatedResponse<Order>> => {
+    try {
+      let query = supabase
+        .from('oms_orders')
+        .select(`
+          *,
+          oms_customers (name, phone),
+          oms_stores (name, code)
+        `);
+      
+      if (filters?.orderId) {
+        query = query.ilike('id', `%${filters.orderId}%`);
+      }
+      if (filters?.customerId) {
+        query = query.eq('customer_id', filters.customerId);
+      }
+      if (filters?.customerPhone) {
+        query = query.eq('oms_customers.phone', filters.customerPhone);
+      }
+      if (filters?.storeId) {
+        query = query.eq('store_id', filters.storeId);
+      }
+      if (filters?.status) {
+        query = query.eq('status', filters.status);
+      }
+      if (filters?.type) {
+        query = query.eq('type', filters.type);
+      }
+      if (filters?.dateFrom) {
+        query = query.gte('order_date', filters.dateFrom.toISOString());
+      }
+      if (filters?.dateTo) {
+        query = query.lte('order_date', filters.dateTo.toISOString());
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const orders: Order[] = data.map((item: any) => ({
+        id: item.id,
+        customerId: item.customer_id,
+        storeId: item.store_id,
+        assignedTo: item.assigned_to,
+        type: item.type,
+        status: item.status,
+        priority: item.priority,
+        garmentType: item.garment_type,
+        styleImages: item.style_images || [],
+        fabricImages: item.fabric_images || [],
+        fabricDetails: {
+          type: item.fabric_type || '',
+          color: item.fabric_color || '',
+          quantity: item.fabric_quantity || 0,
+          unit: item.fabric_unit || 'meters'
+        },
+        measurementId: item.measurement_id,
+        specialInstructions: item.special_instructions,
+        orderDate: new Date(item.order_date),
+        expectedDeliveryDate: new Date(item.expected_delivery_date),
+        actualDeliveryDate: item.actual_delivery_date ? new Date(item.actual_delivery_date) : undefined,
+        fittingDate: item.fitting_date ? new Date(item.fitting_date) : undefined,
+        totalAmount: parseFloat(item.total_amount),
+        advancePaid: parseFloat(item.advance_paid),
+        balanceAmount: parseFloat(item.balance_amount),
+        advancePaidDate: item.advance_paid_date ? new Date(item.advance_paid_date) : undefined,
+        balancePaidDate: item.balance_paid_date ? new Date(item.balance_paid_date) : undefined,
+        statusHistory: [],
+        notes: item.notes || '',
+        createdAt: new Date(item.created_at),
+        updatedAt: new Date(item.updated_at)
+      }));
+
+      return {
+        success: true,
+        data: orders,
+        pagination: {
+          page: 1,
+          limit: orders.length,
+          total: orders.length,
+          totalPages: 1
+        }
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch orders',
+        pagination: { page: 1, limit: 0, total: 0, totalPages: 0 }
+      };
+    }
+  },
+
+  /**
    * Searches for orders based on filters
    * 
    * @param filters - The search filters
@@ -467,5 +565,10 @@ export const orderService = {
   }
 };
 
-// Export createOrder as an alias to orderService.create for backward compatibility
+// Export individual functions for backward compatibility and direct imports
 export const createOrder = orderService.create;
+export const getOrders = orderService.getAll;
+export const getOrderById = orderService.getById;
+export const searchOrders = orderService.search;
+export const updateOrderStatus = orderService.updateStatus;
+export const trackOrder = orderService.trackByOrderAndPhone;
