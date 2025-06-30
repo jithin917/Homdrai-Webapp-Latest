@@ -639,4 +639,6 @@ const AIStylistChat: React.FC = () => {
   );
 };
 
+// Export both as named export and default export to support different import styles
+export { AIStylistChat };
 export default AIStylistChat;
