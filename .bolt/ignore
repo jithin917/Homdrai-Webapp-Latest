@@ -28,9 +28,9 @@ Thumbs.db
 !index.html
 
 # Allow main entry points
-!src/main.tsx
-!src/App.tsx
-!src/index.css
+# !src/main.tsx
+# !src/App.tsx
+# !src/index.css
 
 # New Order Form Focus Section
 # ---------------------------
